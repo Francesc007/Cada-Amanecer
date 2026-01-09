@@ -1,0 +1,282 @@
+/* Estilos Globales - Cada Amanecer (Web Mobile Style) */
+
+:root {
+  --background: #FDFCF0;
+  --primary: #1A2B48;
+  --accent: #D4AF37;
+  --white: #FFFFFF;
+  --text-gray: #666666;
+  --divider: rgba(26, 43, 72, 0.1);
+  --shadow: 0 10px 30px rgba(26, 43, 72, 0.05);
+  
+  /* Fuentes - Toda la app en Serif */
+  --font-serif: 'Cambria', 'Georgia', 'Times New Roman', serif;
+}
+
+body.dark-mode {
+  --background: #1A2B48;
+  --primary: #FDFCF0;
+  --accent: #D4AF37;
+  --white: #121F36;
+  --text-gray: #A0AEC0;
+  --divider: rgba(253, 252, 240, 0.1);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  font-family: var(--font-serif);
+  background-color: #f0f0f0;
+  color: var(--primary);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark-mode {
+  background-color: #0D1526;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  background-color: var(--background);
+  box-shadow: 0 0 50px rgba(0,0,0,0.1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* --- Pantalla de Bienvenida --- */
+.welcome-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background);
+}
+
+.welcome-image-container {
+  height: 60vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.welcome-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.welcome-content {
+  flex: 1;
+  padding: 30px 30px 60px; /* Espacio generoso abajo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: space-between;
+}
+
+.welcome-text-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-title {
+  font-family: var(--font-serif);
+  font-size: 2.2rem;
+  color: var(--accent); /* Regresado a Dorado Mate */
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.welcome-subtitle {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--primary);
+  opacity: 0.9;
+  max-width: 100%;
+  text-align: center;
+  margin: 0 auto;
+}
+
+.welcome-action-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.primary-button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 20px;
+  border-radius: 8px; /* Cuadrado con esquinas suaves */
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(26, 43, 72, 0.2);
+  font-family: var(--font-serif);
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.footer-link {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* --- Onboarding --- */
+.onboarding-screen {
+  padding: 40px 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.progress-bar-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.progress-step {
+  height: 4px;
+  flex: 1;
+  background-color: var(--divider);
+  border-radius: 2px;
+}
+
+.progress-step.active {
+  background-color: var(--accent);
+}
+
+.question-title {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 30px;
+}
+
+.option-item {
+  background: white;
+  padding: 18px 25px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  text-align: left;
+  font-family: var(--font-serif);
+}
+
+.option-item.selected {
+  border-color: var(--accent);
+  background-color: #FFFBEA;
+  color: var(--accent);
+}
+
+/* --- Home --- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+
+.streak-badge {
+  display: flex;
+  align-items: center;
+  background-color: rgba(212, 175, 55, 0.1);
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.daily-card {
+  background: white;
+  border-radius: 12px;
+  padding: 40px 30px;
+  margin: 0 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.verse-text {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-style: italic;
+  margin: 25px 0;
+  line-height: 1.4
+  
+  ;
+}
+
+.write-button {
+  width: calc(100% - 40px);
+  margin: 30px 20px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-serif);
+}
+
+/* --- Modales --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--background);
+  border-radius: 20px;
+  width: calc(100% - 40px);
+  max-width: 390px;
+  box-sizing: border-box;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
