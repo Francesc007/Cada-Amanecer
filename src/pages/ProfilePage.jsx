@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight } from 'lucide-react';
+import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause } from 'lucide-react';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -10,6 +10,8 @@ const ProfilePage = () => {
   const [uploading, setUploading] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [selectedFavorite, setSelectedFavorite] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [profile, setProfile] = useState({
     name: 'Francisco',
     email: '',
@@ -39,11 +41,37 @@ const ProfilePage = () => {
   };
 
   const fetchFavorites = async () => {
-    // Demo data for favorites
-    setFavorites([
-      { id: 1, title: 'Salmo 23:1', text: 'El Señor es mi pastor...' },
-      { id: 2, title: 'Salmo 91:1', text: 'El que habita al abrigo...' }
-    ]);
+    try {
+      const storedIds = JSON.parse(localStorage.getItem('mis_favoritos') || '[]');
+      if (storedIds.length === 0) {
+        setFavorites([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('daily_content')
+        .select('id, versiculo, cita, reflexion, audio_url')
+        .in('id', storedIds);
+
+      if (error) throw error;
+      
+      const mappedFavorites = data.map(f => ({
+        id: f.id,
+        title: f.versiculo,
+        text: f.cita,
+        fullContent: f
+      }));
+
+      // Mantener el orden del localStorage (más recientes primero)
+      const sortedFavorites = storedIds
+        .map(id => mappedFavorites.find(f => f.id === id))
+        .filter(Boolean)
+        .reverse();
+
+      setFavorites(sortedFavorites);
+    } catch (err) {
+      console.error('Error fetching favorites from LocalStorage:', err);
+    }
   };
 
   const handleFileSelect = async (event) => {
@@ -101,8 +129,27 @@ const ProfilePage = () => {
     }
   };
 
+  const handleRemoveFavorite = (e, contentId) => {
+    e.stopPropagation();
+    try {
+      const storedIds = JSON.parse(localStorage.getItem('mis_favoritos') || '[]');
+      const newIds = storedIds.filter(id => id !== contentId);
+      localStorage.setItem('mis_favoritos', JSON.stringify(newIds));
+      
+      setFavorites(favorites.filter(f => f.id !== contentId));
+      if (selectedFavorite?.id === contentId) setSelectedFavorite(null);
+    } catch (err) {
+      console.error('Error removing favorite from LocalStorage:', err);
+    }
+  };
+
+  const handleToggleModalFavorite = () => {
+    if (!selectedFavorite) return;
+    handleRemoveFavorite({ stopPropagation: () => {} }, selectedFavorite.id);
+  };
+
   return (
-    <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh', padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh', padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
       <header style={{ display: 'flex', alignItems: 'center', marginBottom: '40px', width: '100%', maxWidth: '360px' }}>
         <button onClick={() => navigate('/home')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
           <ChevronLeft size={28} />
@@ -215,12 +262,47 @@ const ProfilePage = () => {
           
           {showFavorites && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-              {favorites.map(fav => (
-                <div key={fav.id} style={{ padding: '15px', borderRadius: '12px', backgroundColor: 'var(--white)', border: '1px solid var(--divider)', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
-                  <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>{fav.title}</p>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--primary)', opacity: 0.8 }}>{fav.text}</p>
-                </div>
-              ))}
+              {favorites.length === 0 ? (
+                <p style={{ textAlign: 'center', opacity: 0.6, fontSize: '0.9rem', padding: '10px' }}>No tienes favoritos aún</p>
+              ) : (
+                <>
+                  {favorites.slice(0, 3).map(fav => (
+                    <div 
+                      key={fav.id} 
+                      onClick={() => setSelectedFavorite(fav.fullContent)}
+                      style={{ 
+                        padding: '15px', 
+                        borderRadius: '12px', 
+                        backgroundColor: 'var(--white)', 
+                        border: '1px solid var(--divider)', 
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+                        cursor: 'pointer',
+                        position: 'relative'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>{fav.title}</p>
+                        <Heart 
+                          size={16} 
+                          color="var(--accent)" 
+                          fill="var(--accent)" 
+                          style={{ cursor: 'pointer' }} 
+                          onClick={(e) => handleRemoveFavorite(e, fav.id)}
+                        />
+                      </div>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--primary)', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fav.text}</p>
+                    </div>
+                  ))}
+                  {favorites.length > 3 && (
+                    <button 
+                      onClick={() => navigate('/favorites')}
+                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 'bold', cursor: 'pointer', padding: '10px', fontSize: '0.9rem' }}
+                    >
+                      Ver más...
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>
@@ -241,6 +323,63 @@ const ProfilePage = () => {
           to { transform: rotate(360deg); }
         }
       `}</style>
+
+      {/* Modal Lectura Diaria (Reutilizado para Favoritos) */}
+      {selectedFavorite && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => setSelectedFavorite(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
+            backgroundColor: '#FDFCF0', 
+            padding: '25px', 
+            borderRadius: '32px', 
+            maxWidth: '95%',
+            width: '400px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%' }}>
+              <h2 style={{ fontSize: '1.4rem', color: '#1A2B48', fontWeight: 'bold' }}>Favorito</h2>
+              <button onClick={() => setSelectedFavorite(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A2B48' }}>
+                <X size={28} />
+              </button>
+            </div>
+
+            <div className="daily-card" style={{ 
+              backgroundColor: 'white', 
+              position: 'relative', 
+              margin: '0 auto', 
+              width: '88%', 
+              boxShadow: '0 10px 25px rgba(0,0,0,0.05)', 
+              border: '1px solid rgba(212, 175, 55, 0.15)',
+              padding: '50px 15px 30px',
+              borderRadius: '24px',
+              textAlign: 'center'
+            }}>
+              <div onClick={handleToggleModalFavorite} style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }}>
+                <Heart size={24} color="#D4AF37" fill="#D4AF37" />
+              </div>
+              <p style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: '0.85rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '20px' }}>{selectedFavorite.versiculo}</p>
+              <h2 className="verse-text" style={{ color: '#1A2B48', fontSize: '1.6rem', marginBottom: '25px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedFavorite.cita}"</h2>
+              <div className="card-divider" style={{ margin: '20px auto', height: '1px', backgroundColor: 'rgba(212, 175, 55, 0.2)', width: '60%' }}></div>
+              <p className="reflection-text" style={{ textAlign: 'justify', color: '#1A2B48', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '30px' }}>{selectedFavorite.reflexion}</p>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%' }}>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
+                </div>
+                <button onClick={() => setIsPlaying(!isPlaying)} style={{ width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#1A2B48', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(26, 43, 72, 0.3)' }}>
+                  <div style={{ color: '#D4AF37' }}>
+                    {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: 4 }} />}
+                  </div>
+                </button>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

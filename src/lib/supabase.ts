@@ -20,9 +20,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * 
  * 2. Tabla 'daily_content':
  *    - id: uuid
- *    - date: date (unique)
- *    - verse_title: text (Ej: Salmo 23:1)
- *    - verse_text: text
- *    - reflection: text
+ *    - fecha: date (unique)
+ *    - versiculo: text (Ej: Salmo 23:1)
+ *    - cita: text
+ *    - reflexion: text
  *    - audio_url: text
- */
+ *    - categoria: text
+ *  */
