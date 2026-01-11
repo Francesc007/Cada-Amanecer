@@ -68,12 +68,12 @@ const BiblePage = ({ isPremium }) => {
   };
 
   return (
-    <div style={{ backgroundColor: '#FDFCF0', minHeight: '100vh', padding: '20px 20px 90px', position: 'relative' }}>
+    <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh', padding: '20px 20px 90px', position: 'relative' }}>
       <header style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-        <button onClick={resetView} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A2B48' }}>
+        <button onClick={resetView} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
           <ChevronLeft size={28} />
         </button>
-        <h1 style={{ marginLeft: '15px', fontSize: '1.5rem', color: '#1A2B48', fontWeight: 'bold' }}>
+        <h1 style={{ marginLeft: '15px', fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>
           {selectedBook ? (selectedChapter ? `${selectedBook.name} ${selectedChapter}` : selectedBook.name) : 'La Biblia'}
         </h1>
       </header>
@@ -91,8 +91,8 @@ const BiblePage = ({ isPremium }) => {
                   padding: '12px',
                   borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: testament === t ? '#D4AF37' : 'rgba(26, 43, 72, 0.05)',
-                  color: testament === t ? 'white' : '#1A2B48',
+                  backgroundColor: testament === t ? 'var(--accent)' : 'var(--divider)',
+                  color: testament === t ? 'white' : 'var(--primary)',
                   fontWeight: 'bold',
                   fontSize: '0.8rem',
                   cursor: 'pointer',
@@ -108,14 +108,14 @@ const BiblePage = ({ isPremium }) => {
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            backgroundColor: 'white', 
+            backgroundColor: 'var(--white)', 
             borderRadius: '16px', 
             padding: '12px 15px', 
             marginBottom: '20px',
-            border: '1px solid rgba(212, 175, 55, 0.2)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            border: '1px solid var(--divider)',
+            boxShadow: 'var(--shadow)'
           }}>
-            <Search size={20} color="#1A2B48" style={{ opacity: 0.5 }} />
+            <Search size={20} color="var(--primary)" style={{ opacity: 0.5 }} />
             <input 
               type="text" 
               placeholder="Buscar libro..." 
@@ -127,7 +127,7 @@ const BiblePage = ({ isPremium }) => {
                 marginLeft: '10px', 
                 width: '100%', 
                 outline: 'none',
-                color: '#1A2B48',
+                color: 'var(--primary)',
                 fontSize: '1rem'
               }}
             />
@@ -140,17 +140,17 @@ const BiblePage = ({ isPremium }) => {
                 key={book.id} 
                 onClick={() => handleBookClick(book)}
                 style={{ 
-                  backgroundColor: 'white', 
+                  backgroundColor: 'var(--white)', 
                   padding: '20px', 
                   borderRadius: '20px', 
-                  border: '1px solid rgba(212, 175, 55, 0.1)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                  border: '1px solid var(--divider)',
+                  boxShadow: 'var(--shadow)',
                   cursor: 'pointer',
                   textAlign: 'center'
                 }}
               >
-                <p style={{ color: '#1A2B48', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '5px' }}>{book.name}</p>
-                <p style={{ color: '#666', fontSize: '0.85rem' }}>{book.chapters} capítulos</p>
+                <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '5px' }}>{book.name}</p>
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>{book.chapters} capítulos</p>
               </div>
             ))}
           </div>
@@ -166,9 +166,9 @@ const BiblePage = ({ isPremium }) => {
               style={{
                 aspectRatio: '1',
                 borderRadius: '12px',
-                border: '1px solid rgba(212, 175, 55, 0.2)',
-                backgroundColor: 'white',
-                color: '#1A2B48',
+                border: '1px solid var(--divider)',
+                backgroundColor: 'var(--white)',
+                color: 'var(--primary)',
                 fontWeight: 'bold',
                 fontSize: '1.1rem',
                 cursor: 'pointer'
@@ -182,7 +182,7 @@ const BiblePage = ({ isPremium }) => {
 
       {selectedChapter && (
         <div style={{ 
-          backgroundColor: '#FDFCF0', 
+          backgroundColor: 'var(--background)', 
           padding: '20px', 
           borderRadius: '24px',
           lineHeight: '1.8'
@@ -191,8 +191,8 @@ const BiblePage = ({ isPremium }) => {
             <p style={{ textAlign: 'center', opacity: 0.6 }}>Cargando...</p>
           ) : (
             chapterContent.map(v => (
-              <p key={v.verse} style={{ color: '#1A2B48', marginBottom: '15px', fontSize: '1.1rem', textAlign: 'justify' }}>
-                <span style={{ color: '#D4AF37', fontWeight: 'bold', marginRight: '8px', fontSize: '0.8rem', verticalAlign: 'super' }}>{v.verse}</span>
+              <p key={v.verse} style={{ color: 'var(--primary)', marginBottom: '15px', fontSize: '1.1rem', textAlign: 'justify' }}>
+                <span style={{ color: 'var(--accent)', fontWeight: 'bold', marginRight: '8px', fontSize: '0.8rem', verticalAlign: 'super' }}>{v.verse}</span>
                 {v.text}
               </p>
             ))

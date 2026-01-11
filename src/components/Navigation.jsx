@@ -24,13 +24,13 @@ export const PremiumBadge = ({ size = 12 }) => (
 // --- COMPONENTE: SUBSCRIPTION MODAL ---
 export const SubscriptionModal = ({ onClose, onUpgrade }) => (
   <div className="modal-overlay" onClick={onClose} style={{ zIndex: 2000 }}>
-    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: '#FDFCF0', borderRadius: '30px 30px 0 0', padding: '40px 30px', textAlign: 'center' }}>
-      <Crown size={48} color="#D4AF37" style={{ marginBottom: '20px' }} />
-      <span style={{ backgroundColor: '#D4AF37', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>PREMIUM</span>
-      <h2 className="modal-title" style={{ marginTop: '20px', color: '#1A2B48', fontWeight: 'bold' }}>Accede a funciones exclusivas</h2>
-      <p className="modal-desc" style={{ color: '#1A2B48', opacity: 0.8, lineHeight: '1.6' }}>Desbloquea la IA Espiritual, meditaciones guiadas y planes de lectura personalizados.</p>
-      <button className="primary-button" style={{ backgroundColor: '#D4AF37', color: 'white', marginTop: '20px', border: 'none' }} onClick={onUpgrade}>Activar Prueba Gratuita</button>
-      <p style={{ marginTop: '15px', fontSize: '0.8rem', color: '#1A2B48', opacity: 0.5, cursor: 'pointer' }} onClick={onClose}>Volver por ahora</p>
+    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--background)', borderRadius: '30px 30px 0 0', padding: '40px 30px', textAlign: 'center', border: '1px solid var(--divider)' }}>
+      <Crown size={48} color="var(--accent)" style={{ marginBottom: '20px' }} />
+      <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>PREMIUM</span>
+      <h2 className="modal-title" style={{ marginTop: '20px', color: 'var(--primary)', fontWeight: 'bold' }}>Accede a funciones exclusivas</h2>
+      <p className="modal-desc" style={{ color: 'var(--primary)', opacity: 0.8, lineHeight: '1.6' }}>Desbloquea la IA Espiritual, meditaciones guiadas y planes de lectura personalizados.</p>
+      <button className="primary-button" style={{ backgroundColor: 'var(--accent)', color: 'white', marginTop: '20px', border: 'none' }} onClick={onUpgrade}>Activar Prueba Gratuita</button>
+      <p style={{ marginTop: '15px', fontSize: '0.8rem', color: 'var(--primary)', opacity: 0.5, cursor: 'pointer' }} onClick={onClose}>Volver por ahora</p>
     </div>
   </div>
 );
@@ -65,11 +65,11 @@ export const Navbar = ({ activeTab, isPremium }) => {
         width: '100%',
         maxWidth: '430px',
         height: '70px',
-        backgroundColor: '#FDFCF0',
+        backgroundColor: 'var(--background)',
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
-        borderTop: '1px solid rgba(212, 175, 55, 0.2)',
+        borderTop: '1px solid var(--divider)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 1000
       }}>
@@ -94,12 +94,12 @@ export const Navbar = ({ activeTab, isPremium }) => {
               }}
             >
               <div style={{ position: 'relative' }}>
-                <Icon size={24} color={isActive ? "#D4AF37" : "#1A2B48"} />
+                <Icon size={24} color={isActive ? "var(--accent)" : "var(--primary)"} />
                 {tab.premium && <PremiumBadge />}
               </div>
               <span style={{ 
                 fontSize: '0.7rem', 
-                color: isActive ? "#D4AF37" : "#1A2B48",
+                color: isActive ? "var(--accent)" : "var(--primary)",
                 fontWeight: isActive ? 'bold' : 'normal'
               }}>
                 {tab.label}

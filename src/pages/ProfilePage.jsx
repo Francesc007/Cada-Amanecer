@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause } from 'lucide-react';
 
-const ProfilePage = () => {
+const ProfilePage = ({ userName, setUserName, avatarUrl, setAvatarUrl }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -13,9 +13,9 @@ const ProfilePage = () => {
   const [selectedFavorite, setSelectedFavorite] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [profile, setProfile] = useState({
-    name: 'Francisco',
+    name: userName || 'Francisco',
     email: '',
-    photo: null
+    avatar_url: avatarUrl || null
   });
 
   useEffect(() => {
@@ -25,15 +25,19 @@ const ProfilePage = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      if (deviceId) {
+        const { data } = await supabase
           .from('profiles')
-          .select('name, email, photo')
-          .eq('id', user.id)
-          .single();
+          .select('name, email, avatar_url')
+          .eq('id', deviceId)
+          .maybeSingle();
         
-        if (data) setProfile(data);
+        if (data) {
+          setProfile(data);
+          if (data.name) setUserName(data.name);
+          if (data.avatar_url) setAvatarUrl(data.avatar_url);
+        }
       }
     } catch (err) {
       console.log('Error fetching profile:', err);
@@ -94,10 +98,23 @@ const ProfilePage = () => {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      setProfile({ ...profile, photo: publicUrl });
+      // Actualizar inmediatamente la tabla profiles usando el deviceId local (Modo Anónimo)
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      if (deviceId) {
+        const { error: dbError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('id', deviceId);
+        
+        if (dbError) throw dbError;
+      }
+
+      setProfile({ ...profile, avatar_url: publicUrl });
+      setAvatarUrl(publicUrl);
       
     } catch (error) {
-      alert('Error al subir imagen: ' + error.message);
+      console.error('Error detallado:', error);
+      alert('Error al procesar la imagen: ' + (error.message || 'Error de permisos RLS'));
     } finally {
       setUploading(false);
     }
@@ -106,17 +123,18 @@ const ProfilePage = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      if (!deviceId) throw new Error('Error de identidad del dispositivo');
       
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user?.id || '00000000-0000-0000-0000-000000000000',
+        .update({
           name: profile.name,
           email: profile.email,
-          photo: profile.photo,
+          avatar_url: profile.avatar_url,
           updated_at: new Date()
-        });
+        })
+        .eq('id', deviceId);
 
       if (error) throw error;
       alert('Perfil guardado con éxito');
@@ -182,11 +200,11 @@ const ProfilePage = () => {
               color: 'white', 
               cursor: uploading ? 'default' : 'pointer',
               overflow: 'hidden',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+              boxShadow: '0 4px 15px rgba(212, 175, 55, 0.4)'
             }}
           >
-            {profile.photo ? (
-              <img src={profile.photo} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <span style={{ opacity: uploading ? 0.3 : 1 }}>{profile.name ? profile.name[0] : 'F'}</span>
             )}
@@ -271,7 +289,7 @@ const ProfilePage = () => {
                       key={fav.id} 
                       onClick={() => setSelectedFavorite(fav.fullContent)}
                       style={{ 
-                        padding: '15px', 
+                        padding: '5px 15px', 
                         borderRadius: '12px', 
                         backgroundColor: 'var(--white)', 
                         border: '1px solid var(--divider)', 
@@ -281,16 +299,9 @@ const ProfilePage = () => {
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>{fav.title}</p>
-                        <Heart 
-                          size={16} 
-                          color="var(--accent)" 
-                          fill="var(--accent)" 
-                          style={{ cursor: 'pointer' }} 
-                          onClick={(e) => handleRemoveFavorite(e, fav.id)}
-                        />
+                        <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.75rem', marginBottom: '4px' }}>{fav.title}</p>
                       </div>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--primary)', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fav.text}</p>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--primary)', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fav.text}</p>
                     </div>
                   ))}
                   {favorites.length > 3 && (
@@ -328,52 +339,50 @@ const ProfilePage = () => {
       {selectedFavorite && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => setSelectedFavorite(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
-            backgroundColor: '#FDFCF0', 
+            backgroundColor: 'var(--background)', 
             padding: '25px', 
             borderRadius: '32px', 
             maxWidth: '95%',
             width: '400px',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center'
+            alignItems: 'center',
+            border: '1px solid var(--divider)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%' }}>
-              <h2 style={{ fontSize: '1.4rem', color: '#1A2B48', fontWeight: 'bold' }}>Favorito</h2>
-              <button onClick={() => setSelectedFavorite(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A2B48' }}>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold' }}>Favorito</h2>
+              <button onClick={() => setSelectedFavorite(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
                 <X size={28} />
               </button>
             </div>
 
             <div className="daily-card" style={{ 
-              backgroundColor: 'white', 
+              backgroundColor: 'var(--white)', 
               position: 'relative', 
               margin: '0 auto', 
-              width: '88%', 
-              boxShadow: '0 10px 25px rgba(0,0,0,0.05)', 
-              border: '1px solid rgba(212, 175, 55, 0.15)',
-              padding: '50px 15px 30px',
+              width: '92%', 
+              boxShadow: 'var(--shadow)', 
+              border: '1px solid var(--divider)',
+              padding: '30px 20px 20px',
               borderRadius: '24px',
               textAlign: 'center'
             }}>
-              <div onClick={handleToggleModalFavorite} style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer' }}>
-                <Heart size={24} color="#D4AF37" fill="#D4AF37" />
-              </div>
-              <p style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: '0.85rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '20px' }}>{selectedFavorite.versiculo}</p>
-              <h2 className="verse-text" style={{ color: '#1A2B48', fontSize: '1.6rem', marginBottom: '25px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedFavorite.cita}"</h2>
-              <div className="card-divider" style={{ margin: '20px auto', height: '1px', backgroundColor: 'rgba(212, 175, 55, 0.2)', width: '60%' }}></div>
-              <p className="reflection-text" style={{ textAlign: 'justify', color: '#1A2B48', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '30px' }}>{selectedFavorite.reflexion}</p>
+              <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>{selectedFavorite.versiculo}</p>
+              <h2 className="verse-text" style={{ color: 'var(--primary)', fontSize: '1.4rem', marginBottom: '15px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedFavorite.cita}"</h2>
+              <div className="card-divider" style={{ margin: '15px auto', height: '1px', backgroundColor: 'var(--divider)', width: '60%' }}></div>
+              <p className="reflection-text" style={{ textAlign: 'justify', color: 'var(--primary)', fontSize: '1rem', lineHeight: '1.5', marginBottom: '20px' }}>{selectedFavorite.reflexion}</p>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%' }}>
                 <div style={{ display: 'flex', gap: '3px' }}>
-                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
+                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: 'var(--accent)', borderRadius: '3px' }}></div>)}
                 </div>
-                <button onClick={() => setIsPlaying(!isPlaying)} style={{ width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#1A2B48', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(26, 43, 72, 0.3)' }}>
-                  <div style={{ color: '#D4AF37' }}>
-                    {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: 4 }} />}
+                <button onClick={() => setIsPlaying(!isPlaying)} style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+                  <div style={{ color: 'var(--accent)' }}>
+                    {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 4 }} />}
                   </div>
                 </button>
                 <div style={{ display: 'flex', gap: '3px' }}>
-                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
+                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: 'var(--accent)', borderRadius: '3px' }}></div>)}
                 </div>
               </div>
             </div>

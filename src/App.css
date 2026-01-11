@@ -65,7 +65,7 @@ body.dark-mode {
 }
 
 .welcome-image-container {
-  height: 60vh;
+  height: 65vh;
   width: 100%;
   overflow: hidden;
 }
@@ -78,12 +78,12 @@ body.dark-mode {
 
 .welcome-content {
   flex: 1;
-  padding: 30px 30px 60px; /* Espacio generoso abajo */
+  padding: 5px 30px 30px; 
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  justify-content: space-between;
+  justify-content: space-between; /* Distribuye los 3 bloques principales */
 }
 
 .welcome-text-group {
@@ -91,6 +91,8 @@ body.dark-mode {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: -15px; /* Sube el texto para que casi toque la imagen */
+  margin-bottom: 30px; /* Espacio extra entre el subtítulo y el botón */
 }
 
 .welcome-title {
@@ -99,7 +101,7 @@ body.dark-mode {
   color: var(--accent); /* Regresado a Dorado Mate */
   font-weight: 700;
   line-height: 1.1;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   text-align: center;
 }
 
@@ -124,7 +126,7 @@ body.dark-mode {
 
 .primary-button {
   background-color: var(--primary);
-  color: white;
+  color: var(--background); /* Cambia dinámicamente entre crema y azul marca */
   border: none;
   padding: 20px;
   border-radius: 8px; /* Cuadrado con esquinas suaves */
@@ -142,6 +144,7 @@ body.dark-mode {
   gap: 15px;
   font-size: 0.8rem;
   opacity: 0.6;
+  margin-top: 30px; /* Espacio extra entre el botón y los links legales */
 }
 
 .footer-link {
@@ -264,7 +267,7 @@ body.dark-mode {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000; /* Por encima del navbar */
 }
 
 .modal-content {

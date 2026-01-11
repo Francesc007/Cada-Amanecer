@@ -39,28 +39,26 @@ const WelcomeScreen = () => {
           </p>
         </div>
         
-        <div className="welcome-action-area">
-          <button className="primary-button" onClick={() => navigate('/onboarding')}>
-            Comienza Ahora
-          </button>
-          
-          <div className="footer-links">
-            <span className="footer-link" onClick={() => setModalContent('privacy')}>Política de Privacidad</span>
-            <span className="footer-link" onClick={() => setModalContent('terms')}>Términos de uso</span>
-          </div>
+        <button className="primary-button" onClick={() => navigate('/onboarding')}>
+          Comienza Ahora
+        </button>
+        
+        <div className="footer-links">
+          <span className="footer-link" onClick={() => setModalContent('privacy')}>Política de Privacidad</span>
+          <span className="footer-link" onClick={() => setModalContent('terms')}>Términos de uso</span>
         </div>
       </div>
 
       {modalContent && (
         <div className="modal-overlay" onClick={() => setModalContent(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: '#FDFCF0', borderTop: '4px solid #D4AF37' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--background)', borderTop: '4px solid var(--accent)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.4rem', color: '#1A2B48', fontWeight: 'bold' }}>{content[modalContent].title}</h2>
-              <button onClick={() => setModalContent(null)} style={{ background: 'none', border: 'none', color: '#1A2B48', cursor: 'pointer' }}>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold' }}>{content[modalContent].title}</h2>
+              <button onClick={() => setModalContent(null)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>
                 <X size={24} />
               </button>
             </div>
-            <p style={{ color: '#1A2B48', lineHeight: '1.6', textAlign: 'justify' }}>{content[modalContent].text}</p>
+            <p style={{ color: 'var(--primary)', lineHeight: '1.6', textAlign: 'justify' }}>{content[modalContent].text}</p>
             <button className="primary-button" style={{ marginTop: '30px' }} onClick={() => setModalContent(null)}>Entendido</button>
           </div>
         </div>
@@ -119,95 +117,47 @@ const OnboardingScreen = () => {
 };
 
 // --- COMPONENTE: HOME ---
-const HomeScreen = ({ isPremium, setIsPremium }) => {
+const HomeScreen = ({ 
+  isPremium, setIsPremium, 
+  userName, 
+  avatarUrl,
+  streak, setStreak,
+  completedDays, setCompletedDays,
+  tareasCompletadas, setTareasCompletadas
+}) => {
   const navigate = useNavigate();
   const [content, setContent] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
-  const [streak, setStreak] = useState(0); 
-  const [userName, setUserName] = useState('Francisco');
   const [isFavorite, setIsFavorite] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [noteContent, setNoteContent] = useState('');
-  const [savingNote, setSavingNote] = useState(false);
-  const [tareasCompletadas, setTareasCompletadas] = useState({
-    cita: false,
-    lectura: false,
-    reflexion: false
-  });
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showReadingModal, setShowReadingModal] = useState(false);
   const [quoteData, setQuoteData] = useState(null);
   const [bgImage, setBgImage] = useState('');
 
   const days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  const currentDayIndex = new Date().getDay();
 
   useEffect(() => {
-    const fetchAndSyncStreak = async () => {
+    const getLocalDate = () => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    const fetchContent = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const today = '2026-01-09';
+        const today = getLocalDate();
         
-        if (user) {
-          // Cargar perfil
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('name, is_premium, streak_count, last_login')
-            .eq('id', user.id)
-            .single();
-          
-          if (profile) {
-            setUserName(profile.name || 'Francisco');
-            setIsPremium(profile.is_premium || false);
-            setStreak(profile.streak_count || 0);
-          }
-
-          // Cargar progreso del día
-          const { data: progress } = await supabase
-            .from('daily_progress')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('fecha', today)
-            .single();
-
-          if (progress) {
-            setTareasCompletadas({
-              cita: progress.quote_completed,
-              lectura: progress.reading_completed,
-              reflexion: progress.reflection_completed
-            });
-          }
-        } else {
-          // Cargar progreso del día para INVITADOS desde LocalStorage
-          const guestProgress = JSON.parse(localStorage.getItem('guest_daily_progress') || 'null');
-          if (guestProgress && guestProgress.fecha === today) {
-            setTareasCompletadas({
-              cita: guestProgress.quote_completed,
-              lectura: guestProgress.reading_completed,
-              reflexion: guestProgress.reflection_completed
-            });
-          }
-          
-          // Cargar racha de invitados
-          const guestStreak = parseInt(localStorage.getItem('guest_streak_count') || '0');
-          setStreak(guestStreak);
-        }
-
-        // 1. Cargar Contenido Diario (Salmo y Reflexión)
-        const { data: contentData, error: contentError } = await supabase
+        // 1. Cargar Contenido Diario
+        const { data: contentData } = await supabase
           .from('daily_content')
           .select('id, versiculo, cita, reflexion, audio_url')
           .eq('fecha', today)
           .maybeSingle();
 
-        console.log("Datos de Supabase (daily_content):", contentData);
-        if (contentError) console.error("Error Supabase (daily_content):", contentError);
-
         if (contentData) {
           setContent(contentData);
-          
-          // Verificar si es favorito en LocalStorage
           const storedFavs = JSON.parse(localStorage.getItem('mis_favoritos') || '[]');
           setIsFavorite(storedFavs.includes(contentData.id));
         } else {
@@ -220,98 +170,44 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
         }
 
         // 2. Cargar Citas
-        const { data: quotesData, error: quotesError } = await supabase
+        const { data: quotesData } = await supabase
           .from('daily_quotes')
           .select('phrase, author');
 
-        console.log("Filas de daily_quotes:", quotesData);
-        if (quotesError) console.error("Error cargando daily_quotes:", quotesError);
-
         if (quotesData && quotesData.length > 0) {
-          // Usar la fecha REAL de hoy para elegir un índice estable durante las 24h
-          const realToday = new Date().toISOString().split('T')[0];
-          const dateSeed = new Date(realToday).getTime();
+          const dateSeed = new Date(today).getTime();
           const index = Math.floor((dateSeed / (1000 * 60 * 60 * 24)) % quotesData.length);
           setQuoteData(quotesData[index]);
         } else {
-          setQuoteData({ phrase: "No se encontraron citas en la base de datos.", author: "Sistema" });
+          setQuoteData({ phrase: "No se encontraron citas.", author: "Sistema" });
         }
       } catch (e) {
-        console.error("Error en fetchAndSyncStreak:", e);
+        console.error("Error en fetchContent:", e);
       }
     };
-    fetchAndSyncStreak();
-  }, [setIsPremium]);
+    fetchContent();
+  }, []);
 
-  const saveNote = async () => {
+  const saveNote = async (noteContent) => {
     if (!noteContent.trim()) return;
-    setSavingNote(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const today = '2026-01-09';
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ updated_at: new Date() }) // Actualizamos el perfil simplemente para marcar actividad
+        .eq('id', deviceId);
 
-      if (!user) {
-        // Lógica para INVITADOS (LocalStorage)
-        const guestNotes = JSON.parse(localStorage.getItem('mis_reflexiones') || '[]');
-        
-        // Opcional: Limitar a 1 por día también para invitados si quieres consistencia
-        const alreadyHasNoteToday = guestNotes.some(n => n.fecha === today);
-        if (!isPremium && alreadyHasNoteToday) {
-          alert('Como invitado solo puedes guardar 1 reflexión al día. ¡Inicia sesión para guardar ilimitadas!');
-          return;
-        }
-
-        const newNote = {
-          id: Date.now(),
-          content: noteContent.trim(),
-          fecha: today,
-          created_at: new Date().toISOString()
-        };
-        
-        localStorage.setItem('mis_reflexiones', JSON.stringify([...guestNotes, newNote]));
-        alert('Reflexión guardada en tu dispositivo');
-      } else {
-        // Lógica para USUARIOS REGISTRADOS (Supabase)
-        if (!isPremium) {
-          const { count } = await supabase
-            .from('user_notes')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .gte('created_at', today)
-            .lt('created_at', '2026-01-10');
-
-          if (count && count >= 1) {
-            alert('Los usuarios gratis solo pueden guardar 1 reflexión al día. ¡Hazte Premium para reflexiones ilimitadas!');
-            setShowPaywall(true);
-            return;
-          }
-        }
-
-        const { error } = await supabase
-          .from('user_notes')
-          .insert([{ 
-            user_id: user.id, 
-            content: noteContent.trim() 
-          }]);
-
-        if (error) throw error;
-        alert('Reflexión guardada correctamente');
-      }
-
-      setNoteContent('');
-      setShowNoteModal(false);
-      setTareasCompletadas(prev => ({ ...prev, reflexion: true }));
+      if (error) throw error;
+      updateProgress('reflexion');
     } catch (e) {
-      alert('Error al guardar: ' + e.message);
-    } finally {
-      setSavingNote(false);
+      console.error('Error al guardar reflexión:', e.message);
     }
   };
 
   const allTasksCompleted = tareasCompletadas.cita && tareasCompletadas.lectura;
 
   const renderStreakIcon = () => {
-    const color = allTasksCompleted ? "#D4AF37" : "#666666";
+    const color = allTasksCompleted ? "var(--accent)" : "var(--text-gray)";
     return <TrendingUp size={20} color={color} />;
   };
 
@@ -322,7 +218,8 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
 
   const updateProgress = async (task) => {
     try {
-      const today = '2026-01-09';
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       
       // Usar actualización funcional para asegurar que tenemos el estado más reciente
       setTareasCompletadas(prev => {
@@ -340,92 +237,52 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
 
   const syncProgressWithDatabase = async (newTareas, today) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // Persistencia para INVITADOS en LocalStorage
-        const guestProgress = {
-          fecha: today,
-          quote_completed: newTareas.cita,
-          reading_completed: newTareas.lectura,
-          reflection_completed: newTareas.reflexion
-        };
-        localStorage.setItem('guest_daily_progress', JSON.stringify(guestProgress));
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      if (!deviceId) return;
 
-        // Lógica de racha para invitados
-        if (newTareas.cita && newTareas.lectura) {
-          const lastStreakUpdate = localStorage.getItem('guest_last_streak_update');
-          if (lastStreakUpdate !== today) {
-            const currentStreak = parseInt(localStorage.getItem('guest_streak_count') || '0');
-            const newStreak = currentStreak + 1;
-            localStorage.setItem('guest_streak_count', newStreak.toString());
-            localStorage.setItem('guest_last_streak_update', today);
-            setStreak(newStreak);
-            console.log("DEBUG: Racha de invitado actualizada a:", newStreak);
-          }
-        }
-        return;
-      }
+      console.log('Enviando progreso a Supabase...');
 
-      // Persistencia para USUARIOS en Supabase
-      const { data: existingProgress } = await supabase
+      // 1. Guardar Tareas (Upsert)
+      const { error: upsertError } = await supabase
         .from('daily_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('fecha', today)
-        .single();
+        .upsert({
+          user_id: deviceId,
+          fecha: today,
+          cita_completada: newTareas.cita,
+          lectura_completada: newTareas.lectura,
+          reflexion_completada: newTareas.reflexion
+        }, { onConflict: 'user_id,fecha' });
 
-      const updateData = {
-        quote_completed: newTareas.cita,
-        reading_completed: newTareas.lectura,
-        reflection_completed: newTareas.reflexion,
-      };
+      if (upsertError) throw upsertError;
 
-      if (existingProgress) {
-        await supabase
-          .from('daily_progress')
-          .update(updateData)
-          .eq('id', existingProgress.id);
-      } else {
-        await supabase
-          .from('daily_progress')
-          .insert([{ ...updateData, user_id: user.id, fecha: today }]);
-      }
-
-      // Lógica de racha (streak) solo para usuarios registrados
+      // 2. Lógica de Racha (Streak)
       if (newTareas.cita && newTareas.lectura) {
-        console.log("DEBUG: Verificando racha para usuario logueado...");
+        setCompletedDays(prev => ({ ...prev, [today]: true }));
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('streak_count, last_streak_update')
-          .eq('id', user.id)
-          .single();
+          .eq('id', deviceId)
+          .maybeSingle();
 
-        if (profile) {
-          console.log("DEBUG: Perfil encontrado. Última racha:", profile.last_streak_update);
-          if (profile.last_streak_update !== today) {
-            const newStreak = (profile.streak_count || 0) + 1;
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({ 
-                streak_count: newStreak, 
-                last_streak_update: today 
-              })
-              .eq('id', user.id);
-            
-            if (!updateError) {
-              setStreak(newStreak);
-              console.log("DEBUG: Racha de usuario actualizada a:", newStreak);
-            } else {
-              console.error("DEBUG: Error al actualizar racha:", updateError);
-            }
-          } else {
-            console.log("DEBUG: La racha ya fue actualizada hoy.");
-          }
+        if (profile && profile.last_streak_update !== today) {
+          console.log('Actualizando racha (+1)...');
+          const newStreak = (profile.streak_count || 0) + 1;
+          
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ 
+              streak_count: newStreak, 
+              last_streak_update: today 
+            })
+            .eq('id', deviceId);
+
+          if (updateError) throw updateError;
+          setStreak(newStreak);
         }
       }
     } catch (e) {
-      console.error('Error en syncProgressWithDatabase:', e);
+      console.error('Error en sincronización:', e.message);
     }
   };
 
@@ -450,15 +307,6 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
     if (!tareasCompletadas.lectura) {
       updateProgress('lectura');
     }
-  };
-
-  const scrollToSalmo = () => {
-    // Esta función ya no hace scroll, ahora abre el modal
-    openReadingModal();
-  };
-
-  const openReflection = () => {
-    setShowNoteModal(true);
   };
 
   const handleInviteFriends = async () => {
@@ -507,8 +355,27 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <header className="header" style={{ padding: '20px 20px 10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <div onClick={() => navigate('/profile')} style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#D4AF37', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', cursor: 'pointer', fontSize: '1.2rem' }}>
-            {userName[0]}
+          <div onClick={() => navigate('/profile')} style={{ 
+            width: '50px', 
+            height: '50px', 
+            borderRadius: '50%', 
+            backgroundColor: '#D4AF37', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            color: 'white', 
+            fontWeight: 'bold', 
+            cursor: 'pointer', 
+            fontSize: '1.4rem',
+            boxShadow: '0 2px 10px rgba(212, 175, 55, 0.3)',
+            transition: 'transform 0.2s ease',
+            overflow: 'hidden' // Para que la imagen respete el círculo
+          }}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              userName[0]
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div className="streak-badge" style={{ 
@@ -518,7 +385,7 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
               backgroundColor: allTasksCompleted ? 'rgba(212, 175, 55, 0.1)' : 'rgba(0, 0, 0, 0.05)', 
               padding: '6px 12px', 
               borderRadius: '20px', 
-              color: allTasksCompleted ? '#D4AF37' : '#666666', 
+              color: allTasksCompleted ? 'var(--accent)' : 'var(--text-gray)', 
               fontWeight: 'bold' 
             }}>
               {renderStreakIcon()}
@@ -547,23 +414,32 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 10px', width: '100%', marginTop: '10px' }}>
           {days.map((day, index) => {
-            const isToday = index === currentDayIndex;
-            const isCompleted = isToday && allTasksCompleted;
+            // Usar la fecha de hoy para comparar
+            const d = new Date();
+            const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            
+            // Calcular la fecha para cada día de la semana actual
+            const dateForDay = new Date(d);
+            dateForDay.setDate(d.getDate() - d.getDay() + index);
+            const dateStr = `${dateForDay.getFullYear()}-${String(dateForDay.getMonth() + 1).padStart(2, '0')}-${String(dateForDay.getDate()).padStart(2, '0')}`;
+            
+            const isToday = dateStr === todayStr;
+            const isCompleted = completedDays[dateStr] || (isToday && tareasCompletadas.cita && tareasCompletadas.lectura);
             
             return (
               <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative', width: '30px' }}>
                 <span style={{ 
                   fontSize: '1rem', 
-                  fontWeight: isToday ? 'bold' : 'normal', 
-                  color: isToday ? '#D4AF37' : '#666666',
+                  fontWeight: 'bold', 
+                  color: (isToday || isCompleted) ? 'var(--accent)' : 'var(--text-gray)',
                   marginBottom: '2px'
                 }}>
                   {day}
                 </span>
                 {isCompleted ? (
-                  <Star size={12} color="#D4AF37" fill="#D4AF37" />
+                  <Star size={16} color="var(--accent)" fill="var(--accent)" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))' }} />
                 ) : (
-                  isToday && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#D4AF37' }} />
+                  isToday && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent)' }} />
                 )}
               </div>
             );
@@ -575,16 +451,16 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
         <p style={{ fontSize: '0.7rem', letterSpacing: '2px', opacity: 0.6, marginTop: '15px', textTransform: 'uppercase' }}>
           {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase()}
         </p>
-        <h1 style={{ marginBottom: '25px', fontWeight: 'bold', color: '#1A2B48' }}>Paz contigo, {userName}</h1>
+        <h1 style={{ marginBottom: '25px', fontWeight: 'bold', color: 'var(--primary)' }}>Paz contigo, {userName}</h1>
 
         {/* Sección: Mi Camino de Hoy */}
         <div style={{ width: '100%', maxWidth: '400px', padding: '0 20px', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ textAlign: 'left', fontSize: '0.9rem', color: '#1A2B48', opacity: 0.8, marginBottom: '5px' }}>Mi Camino de Hoy</h3>
+          <h3 style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--primary)', opacity: 0.8, marginBottom: '5px' }}>Mi Camino de Hoy</h3>
           
           {[
             { id: 'cita', label: 'Cita del Día', icon: <Feather size={20} />, action: openQuoteModal },
-            { id: 'lectura', label: 'Lectura Diaria', icon: <Book size={20} />, action: scrollToSalmo },
-            { id: 'reflexion', label: 'Mi Reflexión', icon: <MessageSquare size={20} />, action: openReflection },
+            { id: 'lectura', label: 'Lectura Diaria', icon: <Book size={20} />, action: openReadingModal },
+            { id: 'reflexion', label: 'Mi Reflexión', icon: <MessageSquare size={20} />, action: () => setShowNoteModal(true) },
           ].map((item) => (
             <button
               key={item.id}
@@ -594,30 +470,29 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '16px 20px',
-                backgroundColor: 'white',
+                backgroundColor: 'var(--white)',
                 borderRadius: '16px',
-                border: '1px solid rgba(212, 175, 55, 0.2)',
+                border: '1px solid var(--divider)',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                boxShadow: 'var(--shadow)',
                 transition: 'all 0.2s ease'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#1A2B48' }}>
-                <div style={{ color: '#D4AF37' }}>{item.icon}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--primary)' }}>
+                <div style={{ color: 'var(--accent)' }}>{item.icon}</div>
                 <span style={{ fontWeight: '600' }}>{item.label}</span>
               </div>
               {item.id !== 'reflexion' && (
                 <div style={{ 
-                  width: '24px', 
-                  height: '24px', 
+                  width: '18px', 
+                  height: '18px', 
                   borderRadius: '50%', 
-                  border: `2px solid ${tareasCompletadas[item.id] ? '#4CAF50' : '#E0E0E0'}`,
+                  border: `2px solid ${tareasCompletadas[item.id] ? '#D4AF37' : '#E0E0E0'}`,
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: tareasCompletadas[item.id] ? '#4CAF50' : 'transparent'
+                  backgroundColor: tareasCompletadas[item.id] ? '#D4AF37' : 'transparent'
                 }}>
-                  {tareasCompletadas[item.id] && <CheckCircle size={16} color="white" />}
                 </div>
               )}
             </button>
@@ -629,16 +504,17 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
       {showNoteModal && (
         <div className="modal-overlay" onClick={() => setShowNoteModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
-            backgroundColor: '#FDFCF0', 
+            backgroundColor: 'var(--background)', 
             padding: '25px', 
             borderRadius: '24px', 
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            border: '1px solid var(--divider)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.4rem', color: '#1A2B48', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <PenLine size={24} /> Mi Reflexión
               </h2>
-              <button onClick={() => setShowNoteModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A2B48' }}>
+              <button onClick={() => setShowNoteModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
                 <X size={24} />
               </button>
             </div>
@@ -651,10 +527,10 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
                 width: '100%', 
                 height: '180px', 
                 padding: '20px', 
-                borderRadius: '16px',
-                border: '1px solid #D4AF37',
-                backgroundColor: 'white', 
-                color: '#1A2B48', 
+                borderRadius: '16px', 
+                border: '1px solid var(--accent)',
+                backgroundColor: 'var(--white)', 
+                color: 'var(--primary)', 
                 fontFamily: 'inherit',
                 fontSize: '1.1rem',
                 resize: 'none',
@@ -667,15 +543,19 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
 
             <button 
               className="primary-button" 
-              onClick={saveNote}
-              disabled={savingNote || !noteContent.trim()}
+              onClick={() => {
+                saveNote(noteContent);
+                setNoteContent('');
+                setShowNoteModal(false);
+              }}
+              disabled={!noteContent.trim()}
               style={{ 
-                opacity: (savingNote || !noteContent.trim()) ? 0.7 : 1,
+                opacity: (!noteContent.trim()) ? 0.7 : 1,
                 width: '100%',
                 margin: '0' 
               }}
             >
-              {savingNote ? 'Guardando...' : 'Guardar Reflexión'}
+              Guardar Reflexión
             </button>
           </div>
         </div>
@@ -688,11 +568,16 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center', 
-          backgroundColor: 'rgba(0,0,0,0.9)' 
+          backgroundColor: 'rgba(0,0,0,0.95)',
+          maxWidth: '430px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          bottom: 0, // Ocupa toda la pantalla, incluyendo el área del navbar
+          zIndex: 3000 
         }}>
           <div style={{ 
-            width: 'min(90vw, 400px)', 
-            height: 'min(90vh, 711px)', // Mantiene proporción 9:16
+            width: '100%', 
+            height: '100%', 
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
@@ -703,53 +588,35 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
             backgroundImage: `url(${bgImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            borderRadius: '24px',
             overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
           }}>
+            {/* Overlay sutil solo para legibilidad, sin degradado pesado */}
             <div style={{ 
               position: 'absolute', 
               top: 0, left: 0, right: 0, bottom: 0, 
-              backgroundColor: 'rgba(0,0,0,0.5)', 
-              backdropFilter: 'saturate(1.15)',
+              backgroundColor: 'rgba(0,0,0,0.2)', // Mucho más ligero
+              backdropFilter: 'contrast(1.2) saturate(1.1)', // Aumenta contraste y nitidez
               zIndex: 1
             }} />
             
-            <button 
-              onClick={() => setShowQuoteModal(false)}
-              style={{ 
-                position: 'absolute', 
-                top: '20px', 
-                right: '20px', 
-                background: 'rgba(0,0,0,0.3)', 
-                border: 'none', 
-                color: 'white', 
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                cursor: 'pointer',
-                zIndex: 10
-              }}
-            >
-              <X size={24} />
-            </button>
-
             <div style={{ zIndex: 2, maxWidth: '100%', position: 'relative' }}>
-              <Feather size={40} color="#D4AF37" style={{ marginBottom: '20px' }} />
+              <Feather size={40} color="#D4AF37" style={{ marginBottom: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
               <h2 style={{ 
                 color: 'white', 
                 fontSize: '1.8rem', 
                 fontStyle: 'italic', 
                 lineHeight: '1.4',
-                marginBottom: '20px',
-                textShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                marginBottom: '0px',
+                textShadow: '2px 2px 8px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5)' // Sombra oscura para resaltar en fondos claros
               }}>
                 "{quoteData?.phrase || 'Cargando cita...'}"
               </h2>
-              <p style={{ color: '#D4AF37', fontSize: '1.1rem', fontWeight: 'bold', textShadow: '0 1px 5px rgba(0,0,0,0.3)' }}>
+              <p style={{ 
+                color: '#D4AF37', 
+                fontSize: '1.1rem', 
+                fontWeight: 'bold', 
+                textShadow: '1px 1px 4px rgba(0,0,0,0.8)' 
+              }}>
                 — {quoteData?.author || '...'}
               </p>
             </div>
@@ -759,14 +626,17 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
               onClick={handleAmen}
               style={{ 
                 position: 'absolute', 
-                bottom: '40px', 
+                bottom: '80px', 
                 backgroundColor: 'white', 
                 color: '#1A2B48',
                 border: 'none',
                 width: 'auto',
-                padding: '12px 40px',
+                padding: '12px 25px', // Reducido el padding lateral para hacerlo más pequeño
                 zIndex: 10,
-                borderRadius: '30px'
+                borderRadius: '12px', // Forma casi cuadrada, bordes suaves
+                fontWeight: 'bold',
+                boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                fontSize: '1.1rem' // Manteniendo el tamaño del texto
               }}
             >
               Amén
@@ -777,57 +647,124 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
 
       {/* Modal Lectura Diaria */}
       {showReadingModal && (
-        <div className="modal-overlay" onClick={() => setShowReadingModal(false)}>
+        <div className="modal-overlay" style={{ 
+          padding: 0, 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: 'var(--background)', // Fondo del mismo color que la tarjeta
+          maxWidth: '430px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          bottom: 0,
+          zIndex: 3000 
+        }} onClick={() => setShowReadingModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
-            backgroundColor: '#FDFCF0', 
-            padding: '20px', 
-            borderRadius: '32px', 
-            maxWidth: '95%',
-            width: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center'
+            backgroundColor: 'var(--background)', 
+            padding: '40px 20px', 
+            borderRadius: '0', 
+            width: '100%', 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            position: 'relative', 
+            overflow: 'hidden' // Elimina el scroll
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%' }}>
-              <h2 style={{ fontSize: '1.4rem', color: '#1A2B48', fontWeight: 'bold' }}>Lectura Diaria</h2>
-              <button onClick={() => setShowReadingModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1A2B48' }}>
-                <X size={28} />
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '20px', // Reducido para consistencia
+              width: '100%'
+            }}>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', margin: 0 }}>Lectura Diaria</h2>
+              <button onClick={() => setShowReadingModal(false)} style={{ 
+                background: 'rgba(26, 43, 72, 0.05)', 
+                border: 'none', 
+                cursor: 'pointer', 
+                color: 'var(--primary)',
+                width: '35px',
+                height: '35px',
+                borderRadius: '50%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <X size={24} />
               </button>
             </div>
 
             <div className="daily-card" style={{ 
-              backgroundColor: 'white', 
+              backgroundColor: 'var(--white)', 
               position: 'relative', 
-              margin: '0 auto', 
-              width: '88%', 
-              boxShadow: '0 10px 25px rgba(0,0,0,0.05)', 
-              border: '1px solid rgba(212, 175, 55, 0.15)',
-              padding: '50px 15px 30px',
+              width: '100%', 
+              boxShadow: 'var(--shadow)', 
+              border: '1px solid var(--divider)',
+              padding: '45px 20px 25px', // Aumentado padding superior de 20px a 45px
               borderRadius: '24px',
               textAlign: 'center',
-              overflow: 'hidden'
+              flex: 1, 
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
             }}>
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div onClick={toggleFavorite} style={{ position: 'absolute', top: '-30px', right: '5px', cursor: 'pointer' }}>
-                  <Heart size={24} color={isFavorite ? "#D4AF37" : "#1A2B48"} fill={isFavorite ? "#D4AF37" : "none"} />
+              <div onClick={toggleFavorite} style={{ position: 'absolute', top: '20px', right: '20px', cursor: 'pointer', zIndex: 10 }}>
+                <Heart size={24} color={isFavorite ? "var(--accent)" : "var(--primary)"} fill={isFavorite ? "var(--accent)" : "none"} />
+              </div>
+              
+              <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1px' }}>
+                {content?.versiculo}
+              </p>
+              
+              <h2 className="verse-text" style={{ 
+                color: 'var(--primary)', 
+                fontSize: '1.5rem', 
+                marginBottom: '1px', 
+                fontStyle: 'italic', 
+                lineHeight: '1.4',
+                padding: '0 10px'
+              }}>
+                "{content?.cita}"
+              </h2>
+              
+              {/* Un solo espacio mínimo entre cita y reflexión */}
+              <div style={{ height: '5px' }} />
+              
+              <p className="reflection-text" style={{ 
+                textAlign: 'justify', 
+                color: 'var(--primary)', 
+                fontSize: '1.05rem', 
+                lineHeight: '1.6', 
+                marginBottom: '15px',
+                whiteSpace: 'pre-wrap',
+                padding: '0 5px'
+              }}>
+                {content?.reflexion?.replace(/\\n/g, '\n')}
+              </p>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%', marginTop: 'auto' }}>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
                 </div>
-                <p style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: '0.85rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '20px' }}>{content?.versiculo}</p>
-                <h2 className="verse-text" style={{ color: '#1A2B48', fontSize: '1.6rem', marginBottom: '25px', fontStyle: 'italic', lineHeight: '1.4' }}>"{content?.cita}"</h2>
-                <div className="card-divider" style={{ margin: '20px auto' }}></div>
-                <p className="reflection-text" style={{ textAlign: 'justify', color: '#1A2B48', fontSize: '1.05rem', lineHeight: '1.6', marginBottom: '30px' }}>{content?.reflexion}</p>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%' }}>
-                  <div className="waveform">
-                    {[1,2,3,4].map(i => <div key={i} className="wave-bar" style={{height: `${10 + Math.random()*20}px`}}></div>)}
+                <button onClick={handlePlayClick} style={{ 
+                  width: '50px', 
+                  height: '50px', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'var(--primary)', 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  boxShadow: '0 4px 12px rgba(26, 43, 72, 0.25)' 
+                }}>
+                  <div style={{ color: 'var(--accent)' }}>
+                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />}
                   </div>
-                  <button onClick={handlePlayClick} style={{ width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#1A2B48', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(26, 43, 72, 0.3)' }}>
-                    <div style={{ color: '#D4AF37' }}>
-                      {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: 4 }} />}
-                    </div>
-                  </button>
-                  <div className="waveform">
-                    {[1,2,3,4].map(i => <div key={i} className="wave-bar" style={{height: `${10 + Math.random()*20}px`}}></div>)}
-                  </div>
+                </button>
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
                 </div>
               </div>
             </div>
@@ -837,12 +774,12 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
 
       {showPaywall && (
         <div className="modal-overlay" onClick={() => setShowPaywall(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: '#FDFCF0', borderRadius: '30px 30px 0 0', padding: '40px 30px', textAlign: 'center' }}>
-            <span style={{ backgroundColor: '#D4AF37', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>PREMIUM</span>
-            <h2 className="modal-title" style={{ marginTop: '20px', color: '#1A2B48', fontWeight: 'bold' }}>Escucha tu oración diaria</h2>
-            <p className="modal-desc" style={{ color: '#1A2B48', opacity: 0.8, lineHeight: '1.6' }}>Comienza tu prueba de 7 días gratis.<br/> Después solo <strong>$49 MXN/mes</strong>.</p>
-            <button className="primary-button" style={{ backgroundColor: '#D4AF37', color: 'white', marginTop: '20px', border: 'none' }} onClick={() => { setIsPremium(true); setShowPaywall(false); }}>Activar Prueba Gratuita</button>
-            <p style={{ marginTop: '15px', fontSize: '0.8rem', color: '#1A2B48', opacity: 0.5 }}>Cancela en cualquier momento</p>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--background)', borderRadius: '30px 30px 0 0', padding: '40px 30px', textAlign: 'center', border: '1px solid var(--divider)' }}>
+            <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>PREMIUM</span>
+            <h2 className="modal-title" style={{ marginTop: '20px', color: 'var(--primary)', fontWeight: 'bold' }}>Escucha tu oración diaria</h2>
+            <p className="modal-desc" style={{ color: 'var(--primary)', opacity: 0.8, lineHeight: '1.6' }}>Comienza tu prueba de 7 días gratis.<br/> Después solo <strong>$49 MXN/mes</strong>.</p>
+            <button className="primary-button" style={{ backgroundColor: 'var(--accent)', color: 'white', marginTop: '20px', border: 'none' }} onClick={() => { setIsPremium(true); setShowPaywall(false); }}>Activar Prueba Gratuita</button>
+            <p style={{ marginTop: '15px', fontSize: '0.8rem', color: 'var(--primary)', opacity: 0.5 }}>Cancela en cualquier momento</p>
           </div>
         </div>
       )}
@@ -854,6 +791,84 @@ const HomeScreen = ({ isPremium, setIsPremium }) => {
 // --- APP PRINCIPAL ---
 function App() {
   const [isPremium, setIsPremium] = useState(false);
+  const [userName, setUserName] = useState('Francisco');
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [streak, setStreak] = useState(0);
+  const [completedDays, setCompletedDays] = useState({});
+  const [tareasCompletadas, setTareasCompletadas] = useState({
+    cita: false,
+    lectura: false,
+    reflexion: false
+  });
+
+  useEffect(() => {
+    let deviceId = localStorage.getItem('cada_amanecer_device_id');
+    if (!deviceId) {
+      deviceId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem('cada_amanecer_device_id', deviceId);
+    }
+
+    const loadAppData = async () => {
+      const currentDeviceId = localStorage.getItem('cada_amanecer_device_id');
+      if (!currentDeviceId) return;
+
+      try {
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        const startOfWeekStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+
+        // 1. Cargar Perfil y Racha
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, avatar_url, is_premium, streak_count')
+          .eq('id', currentDeviceId)
+          .maybeSingle();
+        
+        if (profile) {
+          setUserName(profile.name || 'Francisco');
+          setAvatarUrl(profile.avatar_url || null);
+          setIsPremium(profile.is_premium || false);
+          setStreak(profile.streak_count || 0);
+        } else {
+          // Crear perfil inicial si no existe
+          await supabase.from('profiles').upsert([{ id: currentDeviceId, name: 'Francisco' }]);
+        }
+
+        // 2. Cargar Progreso Semanal
+        const { data: weeklyData } = await supabase
+          .from('daily_progress')
+          .select('fecha, cita_completada, lectura_completada, reflexion_completada')
+          .eq('user_id', currentDeviceId)
+          .gte('fecha', startOfWeekStr);
+
+        if (weeklyData) {
+          const completedMap = {};
+          weeklyData.forEach(d => {
+            if (d.cita_completada && d.lectura_completada) {
+              completedMap[d.fecha] = true;
+            }
+          });
+          setCompletedDays(completedMap);
+          
+          const todayProgress = weeklyData.find(d => d.fecha === today);
+          if (todayProgress) {
+            setTareasCompletadas({
+              cita: todayProgress.cita_completada,
+              lectura: todayProgress.lectura_completada,
+              reflexion: todayProgress.reflexion_completada
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error loading app data:', err);
+      }
+    };
+    loadAppData();
+  }, []);
 
   return (
     <ThemeProvider>
@@ -862,11 +877,29 @@ function App() {
           <Routes>
             <Route path="/" element={<WelcomeScreen />} />
             <Route path="/onboarding" element={<OnboardingScreen />} />
-            <Route path="/home" element={<HomeScreen isPremium={isPremium} setIsPremium={setIsPremium} />} />
+            <Route path="/home" element={<HomeScreen 
+              isPremium={isPremium} 
+              setIsPremium={setIsPremium} 
+              userName={userName} 
+              setUserName={setUserName}
+              avatarUrl={avatarUrl}
+              setAvatarUrl={setAvatarUrl}
+              streak={streak}
+              setStreak={setStreak}
+              completedDays={completedDays}
+              setCompletedDays={setCompletedDays}
+              tareasCompletadas={tareasCompletadas}
+              setTareasCompletadas={setTareasCompletadas}
+            />} />
             <Route path="/bible" element={<BiblePage isPremium={isPremium} />} />
             <Route path="/explore" element={<ExplorePlaceholder isPremium={isPremium} />} />
             <Route path="/guide" element={<GuidePlaceholder isPremium={isPremium} />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<ProfilePage 
+              userName={userName} 
+              setUserName={setUserName}
+              avatarUrl={avatarUrl}
+              setAvatarUrl={setAvatarUrl}
+            />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
           </Routes>
@@ -877,16 +910,16 @@ function App() {
 }
 
 const ExplorePlaceholder = ({ isPremium }) => (
-  <div style={{ padding: '20px', backgroundColor: '#FDFCF0', minHeight: '100vh', position: 'relative' }}>
-    <h1 style={{ color: '#1A2B48', fontWeight: 'bold' }}>Explora</h1>
-    <p style={{ color: '#1A2B48', opacity: 0.6 }}>Meditaciones y planes de lectura en camino...</p>
+  <div style={{ padding: '20px', backgroundColor: 'var(--background)', minHeight: '100vh', position: 'relative' }}>
+    <h1 style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Explora</h1>
+    <p style={{ color: 'var(--primary)', opacity: 0.6 }}>Meditaciones y planes de lectura en camino...</p>
     <div style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
-      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '20px', position: 'relative', flex: 1 }}>
-        <p style={{ color: '#1A2B48', fontWeight: 'bold' }}>Meditaciones</p>
+      <div style={{ backgroundColor: 'var(--white)', padding: '20px', borderRadius: '20px', position: 'relative', flex: 1, border: '1px solid var(--divider)' }}>
+        <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Meditaciones</p>
         <PremiumBadge />
       </div>
-      <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '20px', position: 'relative', flex: 1 }}>
-        <p style={{ color: '#1A2B48', fontWeight: 'bold' }}>Planes</p>
+      <div style={{ backgroundColor: 'var(--white)', padding: '20px', borderRadius: '20px', position: 'relative', flex: 1, border: '1px solid var(--divider)' }}>
+        <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Planes</p>
         <PremiumBadge />
       </div>
     </div>
@@ -895,9 +928,9 @@ const ExplorePlaceholder = ({ isPremium }) => (
 );
 
 const GuidePlaceholder = ({ isPremium }) => (
-  <div style={{ padding: '20px', backgroundColor: '#FDFCF0', minHeight: '100vh' }}>
-    <h1 style={{ color: '#1A2B48', fontWeight: 'bold' }}>Guía Espiritual</h1>
-    <p style={{ color: '#1A2B48', opacity: 0.6 }}>Tu IA Espiritual está siendo bendecida...</p>
+  <div style={{ padding: '20px', backgroundColor: 'var(--background)', minHeight: '100vh' }}>
+    <h1 style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Guía Espiritual</h1>
+    <p style={{ color: 'var(--primary)', opacity: 0.6 }}>Tu IA Espiritual está siendo bendecida...</p>
     <Navbar activeTab="guide" isPremium={isPremium} />
   </div>
 );
