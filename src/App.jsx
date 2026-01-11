@@ -6,6 +6,8 @@ import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import BiblePage from './pages/BiblePage';
+import GuidePage from './pages/GuidePage';
+import ExplorePage from './pages/ExplorePage';
 import { Navbar, PremiumBadge, SubscriptionModal } from './components/Navigation';
 import { X, Play, Pause, Heart, Sprout, TreeDeciduous, PenLine, Feather, Book, MessageSquare, CheckCircle, Sparkles, Star, UserPlus, Home, BookOpen, Compass, Crown, Search, ChevronRight as ChevronRightIcon, TrendingUp } from 'lucide-react';
 import './App.css';
@@ -783,7 +785,6 @@ const HomeScreen = ({
           </div>
         </div>
       )}
-      <Navbar activeTab="home" isPremium={isPremium} />
     </div>
   );
 };
@@ -892,9 +893,11 @@ function App() {
               setTareasCompletadas={setTareasCompletadas}
             />} />
             <Route path="/bible" element={<BiblePage isPremium={isPremium} />} />
-            <Route path="/explore" element={<ExplorePlaceholder isPremium={isPremium} />} />
-            <Route path="/guide" element={<GuidePlaceholder isPremium={isPremium} />} />
+            <Route path="/explore" element={<ExplorePage isPremium={isPremium} />} />
+            <Route path="/guide" element={<GuidePage isPremium={isPremium} />} />
             <Route path="/profile" element={<ProfilePage 
+              isPremium={isPremium}
+              setIsPremium={setIsPremium}
               userName={userName} 
               setUserName={setUserName}
               avatarUrl={avatarUrl}
@@ -903,36 +906,14 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
           </Routes>
+          <Navbar 
+            isPremium={isPremium} 
+            setIsPremium={setIsPremium}
+          />
         </div>
       </Router>
     </ThemeProvider>
   );
 }
-
-const ExplorePlaceholder = ({ isPremium }) => (
-  <div style={{ padding: '20px', backgroundColor: 'var(--background)', minHeight: '100vh', position: 'relative' }}>
-    <h1 style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Explora</h1>
-    <p style={{ color: 'var(--primary)', opacity: 0.6 }}>Meditaciones y planes de lectura en camino...</p>
-    <div style={{ marginTop: '20px', display: 'flex', gap: '15px' }}>
-      <div style={{ backgroundColor: 'var(--white)', padding: '20px', borderRadius: '20px', position: 'relative', flex: 1, border: '1px solid var(--divider)' }}>
-        <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Meditaciones</p>
-        <PremiumBadge />
-      </div>
-      <div style={{ backgroundColor: 'var(--white)', padding: '20px', borderRadius: '20px', position: 'relative', flex: 1, border: '1px solid var(--divider)' }}>
-        <p style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Planes</p>
-        <PremiumBadge />
-      </div>
-    </div>
-    <Navbar activeTab="explore" isPremium={isPremium} />
-  </div>
-);
-
-const GuidePlaceholder = ({ isPremium }) => (
-  <div style={{ padding: '20px', backgroundColor: 'var(--background)', minHeight: '100vh' }}>
-    <h1 style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Guía Espiritual</h1>
-    <p style={{ color: 'var(--primary)', opacity: 0.6 }}>Tu IA Espiritual está siendo bendecida...</p>
-    <Navbar activeTab="guide" isPremium={isPremium} />
-  </div>
-);
 
 export default App;

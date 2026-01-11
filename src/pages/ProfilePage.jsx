@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause } from 'lucide-react';
+import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause, Crown, Check } from 'lucide-react';
 
-const ProfilePage = ({ userName, setUserName, avatarUrl, setAvatarUrl }) => {
+const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl, setAvatarUrl }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -12,6 +13,30 @@ const ProfilePage = ({ userName, setUserName, avatarUrl, setAvatarUrl }) => {
   const [favorites, setFavorites] = useState([]);
   const [selectedFavorite, setSelectedFavorite] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(location.state?.openPremium || false);
+  const [selectedPlan, setSelectedPlan] = useState(location.state?.selectedPlan || 'monthly');
+
+  const handleActivatePremium = async () => {
+    setLoading(true);
+    try {
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_premium: true })
+        .eq('id', deviceId);
+      
+      if (error) throw error;
+      
+      setIsPremium(true);
+      setShowPremiumModal(false);
+      alert('¡Bienvenido a Acceso Total! Ahora puedes disfrutar de todas las funciones.');
+    } catch (err) {
+      console.error('Error al activar premium:', err);
+      alert('Hubo un problema al procesar tu solicitud.');
+    } finally {
+      setLoading(false);
+    }
+  };
   const [profile, setProfile] = useState({
     name: userName || 'Francisco',
     email: '',
@@ -175,7 +200,7 @@ const ProfilePage = ({ userName, setUserName, avatarUrl, setAvatarUrl }) => {
         <h1 style={{ marginLeft: '20px', fontSize: '1.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>Mi Perfil</h1>
       </header>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '30px', width: '100%', maxWidth: '320px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%', maxWidth: '320px' }}>
         {/* Foto de Perfil */}
         <input 
           type="file" 
@@ -240,91 +265,105 @@ const ProfilePage = ({ userName, setUserName, avatarUrl, setAvatarUrl }) => {
           )}
         </div>
 
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', opacity: 0.8, fontWeight: 'bold' }}>Nombre</label>
-            <input 
-              type="text" 
-              value={profile.name} 
-              onChange={(e) => setProfile({...profile, name: e.target.value})}
-              style={{ width: '100%', padding: '15px', borderRadius: '8px', border: '1px solid var(--divider)', backgroundColor: 'var(--white)', color: 'var(--primary)', fontFamily: 'inherit', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', opacity: 0.8, fontWeight: 'bold' }}>Correo (Opcional)</label>
-            <input 
-              type="email" 
-              value={profile.email} 
-              onChange={(e) => setProfile({...profile, email: e.target.value})}
-              style={{ width: '100%', padding: '15px', borderRadius: '8px', border: '1px solid var(--divider)', backgroundColor: 'var(--white)', color: 'var(--primary)', fontFamily: 'inherit', boxSizing: 'border-box' }}
-            />
-          </div>
-        </div>
+        <h2 style={{ fontSize: '1.25rem', color: 'var(--primary)', fontWeight: 'bold', margin: '0' }}>{profile.name}</h2>
 
-        <button className="primary-button" style={{ width: '100%' }} onClick={handleSave} disabled={loading || uploading}>
-          {loading ? 'Guardando...' : 'Guardar Perfil'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginTop: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '15px' }}>
+            <button 
+              className="primary-button" 
+              style={{ 
+                width: '100%', 
+                padding: '12px', 
+                fontSize: '1rem', 
+                backgroundColor: isPremium ? 'var(--white)' : 'var(--accent)', 
+                color: isPremium ? 'var(--accent)' : 'white',
+                boxShadow: isPremium ? 'none' : '0 4px 10px rgba(212, 175, 55, 0.2)',
+                border: isPremium ? '1.5px solid var(--accent)' : 'none'
+              }} 
+              onClick={() => !isPremium && setShowPremiumModal(true)}
+              disabled={isPremium}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                {isPremium ? <Check size={20} /> : <Crown size={20} fill="currentColor" />}
+                <span>{isPremium ? 'Suscripción Activa' : 'Acceso Total'}</span>
+              </div>
+            </button>
 
-        {/* Sección de Favoritos */}
-        <div style={{ width: '100%', borderTop: '1px solid var(--divider)', paddingTop: '20px' }}>
-          <button 
-            onClick={() => setShowFavorites(!showFavorites)}
-            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', width: '100%', padding: '15px 0', cursor: 'pointer', color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.1rem' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <Heart size={24} color={favorites.length > 0 ? "var(--accent)" : "var(--primary)"} fill={favorites.length > 0 ? "var(--accent)" : "none"} />
-              Favoritos ({favorites.length})
-            </div>
-            <ChevronRight size={20} style={{ transform: showFavorites ? 'rotate(90deg)' : 'rotate(0deg)', transition: '0.2s' }} />
-          </button>
-          
-          {showFavorites && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-              {favorites.length === 0 ? (
-                <p style={{ textAlign: 'center', opacity: 0.6, fontSize: '0.9rem', padding: '10px' }}>No tienes favoritos aún</p>
-              ) : (
-                <>
-                  {favorites.slice(0, 3).map(fav => (
-                    <div 
-                      key={fav.id} 
-                      onClick={() => setSelectedFavorite(fav.fullContent)}
-                      style={{ 
-                        padding: '5px 15px', 
-                        borderRadius: '12px', 
-                        backgroundColor: 'var(--white)', 
-                        border: '1px solid var(--divider)', 
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
-                        cursor: 'pointer',
-                        position: 'relative'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.75rem', marginBottom: '4px' }}>{fav.title}</p>
+            <button 
+              className="primary-button" 
+              style={{ 
+                width: '100%', 
+                padding: '12px', 
+                fontSize: '1rem' 
+              }} 
+              onClick={handleSave} 
+              disabled={loading || uploading}
+            >
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </div>
+
+          {/* Sección de Favoritos */}
+          <div style={{ width: '100%', borderTop: '1px solid var(--divider)', paddingTop: '15px' }}>
+            <button 
+              onClick={() => setShowFavorites(!showFavorites)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', width: '100%', padding: '10px 0', cursor: 'pointer', color: 'var(--primary)', fontWeight: 'bold', fontSize: '1rem' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <Heart size={24} color={favorites.length > 0 ? "var(--accent)" : "var(--primary)"} fill={favorites.length > 0 ? "var(--accent)" : "none"} />
+                Favoritos ({favorites.length})
+              </div>
+              <ChevronRight size={20} style={{ transform: showFavorites ? 'rotate(90deg)' : 'rotate(0deg)', transition: '0.2s' }} />
+            </button>
+            
+            {showFavorites && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                {favorites.length === 0 ? (
+                  <p style={{ textAlign: 'center', opacity: 0.6, fontSize: '0.9rem', padding: '10px' }}>No tienes favoritos aún</p>
+                ) : (
+                  <>
+                    {favorites.slice(0, 3).map(fav => (
+                      <div 
+                        key={fav.id} 
+                        onClick={() => setSelectedFavorite(fav.fullContent)}
+                        style={{ 
+                          padding: '5px 15px', 
+                          borderRadius: '12px', 
+                          backgroundColor: 'var(--white)', 
+                          border: '1px solid var(--divider)', 
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+                          cursor: 'pointer',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.75rem', marginBottom: '4px' }}>{fav.title}</p>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--primary)', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fav.text}</p>
                       </div>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--primary)', opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{fav.text}</p>
-                    </div>
-                  ))}
-                  {favorites.length > 3 && (
-                    <button 
-                      onClick={() => navigate('/favorites')}
-                      style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 'bold', cursor: 'pointer', padding: '10px', fontSize: '0.9rem' }}
-                    >
-                      Ver más...
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
+                    ))}
+                    {favorites.length > 3 && (
+                      <button 
+                        onClick={() => navigate('/favorites')}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 'bold', cursor: 'pointer', padding: '10px', fontSize: '0.9rem' }}
+                      >
+                        Ver más...
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
-        <div style={{ width: '100%', borderTop: '1px solid var(--divider)', paddingTop: '10px' }}>
-          <button 
-            onClick={() => navigate('/settings')}
-            style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'none', border: 'none', width: '100%', padding: '15px 0', cursor: 'pointer', fontSize: '1.1rem', color: 'var(--primary)', fontWeight: 'bold' }}
-          >
-            <SettingsIcon size={24} /> Configuración
-          </button>
+          <div style={{ width: '100%', borderTop: '1px solid var(--divider)', paddingTop: '5px' }}>
+            <button 
+              onClick={() => navigate('/settings')}
+              style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'none', border: 'none', width: '100%', padding: '10px 0', cursor: 'pointer', fontSize: '1rem', color: 'var(--primary)', fontWeight: 'bold' }}
+            >
+              <SettingsIcon size={24} /> Configuración
+            </button>
+          </div>
         </div>
       </div>
       
@@ -385,6 +424,124 @@ const ProfilePage = ({ userName, setUserName, avatarUrl, setAvatarUrl }) => {
                   {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: 'var(--accent)', borderRadius: '3px' }}></div>)}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Premium (Paywall) */}
+      {showPremiumModal && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000 }} onClick={() => setShowPremiumModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
+            backgroundColor: 'var(--background)', 
+            borderRadius: '32px', 
+            maxWidth: '90%',
+            width: '380px',
+            overflow: 'hidden',
+            border: '1px solid var(--divider)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Imagen Superior (Estilo Tablero de Iglesia) */}
+            <div style={{ position: 'relative', height: '180px', width: '100%' }}>
+              <img 
+                src="/biblia.jpg" 
+                alt="Acceso Total" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent, var(--background))' }}></div>
+              <button 
+                onClick={() => setShowPremiumModal(false)}
+                style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(5px)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: 'white' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ padding: '30px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+                <Crown size={32} color="var(--accent)" fill="var(--accent)" />
+              </div>
+              <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '10px' }}>Acceso Total</h2>
+              <p style={{ color: 'var(--primary)', opacity: 0.7, fontSize: '1rem', lineHeight: '1.5', marginBottom: '25px' }}>
+                Desbloquea todas las funciones, meditaciones guiadas e IA Espiritual ilimitada.
+              </p>
+
+              {/* Opciones de Planes */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
+                <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '8px' }}>
+                  Comienza con 7 días gratis
+                </p>
+                <div 
+                  onClick={() => setSelectedPlan('monthly')}
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: '8px', 
+                    border: `1.5px solid ${selectedPlan === 'monthly' ? 'var(--accent)' : 'var(--divider)'}`,
+                    backgroundColor: selectedPlan === 'monthly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    transition: '0.1s'
+                  }}
+                >
+                  <div style={{ textAlign: 'left' }}>
+                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>Mensual</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>7 días gratis, luego $49 MXN/mes</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>$49 MXN</p>
+                  </div>
+                </div>
+
+                <div 
+                  onClick={() => setSelectedPlan('yearly')}
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: '8px', 
+                    border: `1.5px solid ${selectedPlan === 'yearly' ? 'var(--accent)' : 'var(--divider)'}`,
+                    backgroundColor: selectedPlan === 'yearly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    transition: '0.1s',
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>Anual</p>
+                      <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '1px 6px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 'bold' }}>
+                        MEJOR VALOR
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>7 días gratis, luego $499 MXN/año</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>$499 MXN</p>
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.5, textAlign: 'justify', marginBottom: '20px', lineHeight: '1.3' }}>
+                Tu prueba gratuita de 7 días se convertirá automáticamente en una suscripción de pago a menos que la canceles al menos 24 horas antes de que finalice el período de prueba. Puedes cancelar en cualquier momento desde la configuración de tu cuenta.
+              </p>
+
+              <button 
+                className="primary-button" 
+                onClick={handleActivatePremium}
+                disabled={loading}
+                style={{ width: '100%', backgroundColor: 'var(--accent)', color: 'white', padding: '15px' }}
+              >
+                {loading ? 'Procesando...' : 'Comenzar ahora'}
+              </button>
+              
+              <p style={{ marginTop: '20px', fontSize: '0.8rem', color: 'var(--primary)', opacity: 0.5 }}>
+                Pago seguro. Sin cargos ocultos.
+              </p>
             </div>
           </div>
         </div>
