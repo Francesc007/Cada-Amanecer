@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sun, BookOpen, Compass, Sparkles, Crown, X } from 'lucide-react';
+import { Sun, BookOpen, Search, Sparkles, Crown, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 // --- COMPONENTE: PREMIUM BADGE ---
@@ -65,67 +65,18 @@ export const SubscriptionModal = ({ onClose, onUpgrade }) => {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
             <Crown size={32} color="var(--accent)" fill="var(--accent)" />
           </div>
-          <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '5px' }}>Función Exclusiva</h2>
-          <p style={{ color: 'var(--primary)', opacity: 0.8, lineHeight: '1.4', fontSize: '0.9rem', marginBottom: '15px' }}>
-            Prueba 7 días gratis y desbloquea todo el contenido. Cancela cuando quieras.
+          <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '10px' }}>Función Exclusiva</h2>
+          <p style={{ color: 'var(--primary)', opacity: 0.8, fontSize: '0.95rem', marginBottom: '20px', lineHeight: '1.4' }}>
+            Prueba todas nuestras funciones premium gratis durante 7 días.
           </p>
-          
-          {/* Mini Selector de Planes dentro del Modal */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
-            <div 
-              onClick={() => setSelectedPlan('monthly')}
-              style={{ 
-                padding: '10px 15px', 
-                borderRadius: '12px', 
-                border: `1.5px solid ${selectedPlan === 'monthly' ? 'var(--accent)' : 'var(--divider)'}`,
-                backgroundColor: selectedPlan === 'monthly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer',
-                transition: '0.1s'
-              }}
-            >
-              <div style={{ textAlign: 'left' }}>
-                <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.9rem' }}>Mensual</p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--primary)', opacity: 0.6 }}>7 días gratis</p>
-              </div>
-              <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.9rem' }}>$49 MXN</p>
-            </div>
-
-            <div 
-              onClick={() => setSelectedPlan('yearly')}
-              style={{ 
-                padding: '10px 15px', 
-                borderRadius: '12px', 
-                border: `1.5px solid ${selectedPlan === 'yearly' ? 'var(--accent)' : 'var(--divider)'}`,
-                backgroundColor: selectedPlan === 'yearly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer',
-                transition: '0.1s'
-              }}
-            >
-              <div style={{ textAlign: 'left' }}>
-                <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.9rem' }}>Anual</p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--primary)', opacity: 0.6 }}>7 días gratis</p>
-              </div>
-              <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.9rem' }}>$499 MXN</p>
-            </div>
-          </div>
           
           <button 
             className="primary-button" 
             style={{ backgroundColor: 'var(--accent)', color: 'white', border: 'none', width: '100%', padding: '14px' }} 
             onClick={handleAction}
           >
-            Comenzar mi prueba de 7 días
+            Ver planes de suscripción
           </button>
-          
-          <p style={{ marginTop: '12px', fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.5, lineHeight: '1.2' }}>
-            No se te cobrará nada hoy. Puedes cancelar en cualquier momento antes de que termine el periodo de prueba.
-          </p>
         </div>
       </div>
     </div>
@@ -142,7 +93,7 @@ export const Navbar = ({ isPremium, setIsPremium }) => {
   const tabs = [
     { id: 'home', label: 'Hoy', icon: Sun, path: '/home' },
     { id: 'bible', label: 'Biblia', icon: BookOpen, path: '/bible' },
-    { id: 'explore', label: 'Explora', icon: Compass, path: '/explore', premium: true },
+    { id: 'explore', label: 'Explora', icon: Search, path: '/explore', premium: true },
     { id: 'guide', label: 'Guía', icon: Sparkles, path: '/guide', premium: true },
   ];
 
@@ -217,16 +168,9 @@ export const Navbar = ({ isPremium, setIsPremium }) => {
       {showPaywall && (
         <SubscriptionModal 
           onClose={() => setShowPaywall(false)} 
-          onUpgrade={async () => {
-            try {
-              const deviceId = localStorage.getItem('cada_amanecer_device_id');
-              await supabase.from('profiles').update({ is_premium: true }).eq('id', deviceId);
-              setIsPremium(true);
-              setShowPaywall(false);
-              if (pendingTab) navigate(pendingTab);
-            } catch (e) {
-              console.error(e);
-            }
+          onUpgrade={() => {
+            setShowPaywall(false);
+            navigate('/profile', { state: { openPremium: true } });
           }} 
         />
       )}

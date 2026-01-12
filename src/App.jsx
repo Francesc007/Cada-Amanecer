@@ -8,6 +8,7 @@ import FavoritesPage from './pages/FavoritesPage';
 import BiblePage from './pages/BiblePage';
 import GuidePage from './pages/GuidePage';
 import ExplorePage from './pages/ExplorePage';
+import DiarioPage from './pages/DiarioPage';
 import { Navbar, PremiumBadge, SubscriptionModal } from './components/Navigation';
 import { X, Play, Pause, Heart, Sprout, TreeDeciduous, PenLine, Feather, Book, MessageSquare, CheckCircle, Sparkles, Star, UserPlus, Home, BookOpen, Compass, Crown, Search, ChevronRight as ChevronRightIcon, TrendingUp } from 'lucide-react';
 import './App.css';
@@ -32,12 +33,13 @@ const WelcomeScreen = () => {
     <div className="welcome-screen">
       <div className="welcome-image-container">
         <img src="/biblia.jpg" alt="Biblia" className="welcome-image" />
+        <div className="welcome-image-gradient"></div>
       </div>
       <div className="welcome-content">
         <div className="welcome-text-group">
           <h1 className="welcome-title">Bienvenido a Cada Amanecer</h1>
           <p className="welcome-subtitle">
-            "Sin importar en qué punto de tu fe te encuentres, aquí encontrarás un hogar, apoyo y esperanza renovada para tu camino."
+            "Un refugio diario para fortalecer tu espíritu, encontrar paz y renovar tu esperanza en cada amanecer. Estamos aquí para acompañarte en tu caminar."
           </p>
         </div>
         
@@ -70,15 +72,15 @@ const WelcomeScreen = () => {
 };
 
 // --- COMPONENTE: ONBOARDING ---
-const OnboardingScreen = () => {
+const OnboardingScreen = ({ setUserName }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState({ goals: [], time: '', feeling: [] });
+  const [answers, setAnswers] = useState({ goals: [], name: '', feeling: [] });
 
   const questions = [
     { id: 'goals', q: '¿Qué buscas hoy?', options: ['Paz', 'Guía', 'Fortaleza', 'Gratitud'], multi: true },
-    { id: 'time', q: '¿En qué momento prefieres tu oración?', options: ['Mañana', 'Tarde', 'Noche'], multi: false },
-    { id: 'feeling', q: '¿Cómo te sientes estos días con tu fe?', options: ['Cerca de Dios', 'Buscando respuestas', 'Necesito consuelo', 'Lleno de dudas'], multi: true }
+    { id: 'feeling', q: '¿Cómo te sientes estos días con tu fe?', options: ['Cerca de Dios', 'Buscando respuestas', 'Necesito consuelo', 'Lleno de dudas'], multi: true },
+    { id: 'name', q: '¿Cuál es tu nombre?', type: 'input' }
   ];
 
   const handleSelect = (opt) => {
@@ -91,9 +93,27 @@ const OnboardingScreen = () => {
     }
   };
 
-  const next = () => {
-    if (step < 2) setStep(step + 1);
-    else navigate('/home');
+  const next = async () => {
+    if (step < 2) {
+      setStep(step + 1);
+    } else {
+      // Guardar nombre en Supabase y estado global al finalizar
+      try {
+        const deviceId = localStorage.getItem('cada_amanecer_device_id');
+        if (deviceId && answers.name.trim()) {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ name: answers.name.trim() })
+            .eq('id', deviceId);
+          
+          if (error) throw error;
+          setUserName(answers.name.trim());
+        }
+      } catch (e) {
+        console.error('Error guardando nombre en onboarding:', e);
+      }
+      navigate('/home');
+    }
   };
 
   const q = questions[step];
@@ -104,14 +124,36 @@ const OnboardingScreen = () => {
         {[0, 1, 2].map(i => <div key={i} className={`progress-step ${i <= step ? 'active' : ''}`} />)}
       </div>
       <h2 className="question-title">{q.q}</h2>
+      
       <div className="options-list">
-        {q.options.map(opt => (
-          <div key={opt} className={`option-item ${q.multi ? (answers[q.id].includes(opt) ? 'selected' : '') : (answers[q.id] === opt ? 'selected' : '')}`} onClick={() => handleSelect(opt)}>
-            {opt}
-          </div>
-        ))}
+        {q.type === 'input' ? (
+          <input 
+            type="text"
+            value={answers[q.id]}
+            onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+            placeholder="Tu nombre aquí..."
+            className="onboarding-input"
+            autoFocus
+          />
+        ) : (
+          q.options.map(opt => (
+            <div 
+              key={opt} 
+              className={`option-item ${q.multi ? (answers[q.id].includes(opt) ? 'selected' : '') : (answers[q.id] === opt ? 'selected' : '')}`} 
+              onClick={() => handleSelect(opt)}
+            >
+              {opt}
+            </div>
+          ))
+        )}
       </div>
-      <button className="primary-button" style={{ marginTop: '30px' }} disabled={q.multi ? answers[q.id].length === 0 : !answers[q.id]} onClick={next}>
+
+      <button 
+        className="primary-button" 
+        style={{ marginTop: '30px' }} 
+        disabled={q.type === 'input' ? !answers[q.id].trim() : (q.multi ? answers[q.id].length === 0 : !answers[q.id])} 
+        onClick={next}
+      >
         {step === 2 ? 'Finalizar' : 'Siguiente'}
       </button>
     </div>
@@ -194,15 +236,37 @@ const HomeScreen = ({
     if (!noteContent.trim()) return;
     try {
       const deviceId = localStorage.getItem('cada_amanecer_device_id');
-      const { error } = await supabase
+      console.log('Guardando reflexión diaria...', { deviceId });
+      
+      // 1. Guardar en user_reflections (Nueva tabla de diario)
+      const { data, error: reflectionError } = await supabase
+        .from('user_reflections')
+        .insert([{
+          user_id: deviceId,
+          content: noteContent,
+          reference: 'Reflexión Diaria'
+        }])
+        .select();
+
+      if (reflectionError) {
+        console.error('Error al insertar reflexión diaria:', reflectionError);
+        throw reflectionError;
+      }
+
+      console.log('Reflexión diaria guardada:', data);
+
+      // 2. Marcar progreso diario
+      const { error: profileError } = await supabase
         .from('profiles')
-        .update({ updated_at: new Date() }) // Actualizamos el perfil simplemente para marcar actividad
+        .update({ updated_at: new Date() })
         .eq('id', deviceId);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+      
       updateProgress('reflexion');
     } catch (e) {
-      console.error('Error al guardar reflexión:', e.message);
+      console.error('Error detallado en saveNote:', e.message);
+      alert(`No se pudo guardar la reflexión: ${e.message}`);
     }
   };
 
@@ -823,17 +887,45 @@ function App() {
         const startOfWeekStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
 
         // 1. Cargar Perfil y Racha
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('name, avatar_url, is_premium, streak_count')
+          .select('name, avatar_url, is_premium, streak_count, premium_until')
           .eq('id', currentDeviceId)
           .maybeSingle();
         
-        if (profile) {
+        if (profileError) {
+          console.warn('Error al cargar perfil completo, intentando versión básica:', profileError.message);
+          // Si falla por columnas nuevas, intentar solo las básicas
+          const { data: basicProfile } = await supabase
+            .from('profiles')
+            .select('name, avatar_url, is_premium, streak_count')
+            .eq('id', currentDeviceId)
+            .maybeSingle();
+          
+          if (basicProfile) {
+            setUserName(basicProfile.name || 'Francisco');
+            setAvatarUrl(basicProfile.avatar_url || null);
+            setIsPremium(basicProfile.is_premium || false);
+            setStreak(basicProfile.streak_count || 0);
+          }
+        } else if (profile) {
           setUserName(profile.name || 'Francisco');
           setAvatarUrl(profile.avatar_url || null);
-          setIsPremium(profile.is_premium || false);
           setStreak(profile.streak_count || 0);
+
+          // Verificar si el premium ha expirado
+          let premiumActive = profile.is_premium || false;
+          if (premiumActive && profile.premium_until) {
+            const now = new Date();
+            const expiration = new Date(profile.premium_until);
+            if (now > expiration) {
+              console.log('Premium expirado. Bloqueando funciones.');
+              premiumActive = false;
+              // Actualizar en la base de datos para persistir el bloqueo
+              await supabase.from('profiles').update({ is_premium: false }).eq('id', currentDeviceId);
+            }
+          }
+          setIsPremium(premiumActive);
         } else {
           // Crear perfil inicial si no existe
           await supabase.from('profiles').upsert([{ id: currentDeviceId, name: 'Francisco' }]);
@@ -876,9 +968,9 @@ function App() {
       <Router>
         <div className="app-container">
           <Routes>
-            <Route path="/" element={<WelcomeScreen />} />
-            <Route path="/onboarding" element={<OnboardingScreen />} />
-            <Route path="/home" element={<HomeScreen 
+          <Route path="/" element={<WelcomeScreen />} />
+          <Route path="/onboarding" element={<OnboardingScreen setUserName={setUserName} />} />
+          <Route path="/home" element={<HomeScreen 
               isPremium={isPremium} 
               setIsPremium={setIsPremium} 
               userName={userName} 
@@ -905,6 +997,7 @@ function App() {
             />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/diario" element={<DiarioPage />} />
           </Routes>
           <Navbar 
             isPremium={isPremium} 

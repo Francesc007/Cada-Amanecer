@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Send, Sparkles, User, Bot, Loader2 } from 'lucide-react';
+import { ChevronLeft, Send, Sparkles, User, Bot, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { Navbar } from '../components/Navigation';
+import { supabase } from '../lib/supabase';
 
 const GuidePage = ({ isPremium }) => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const GuidePage = ({ isPremium }) => {
           display: 'flex', 
           flexDirection: 'column', 
           gap: '20px',
-          paddingBottom: '150px'
+          paddingBottom: '250px'
         }}
       >
         {messages.map((msg) => (
@@ -111,13 +112,13 @@ const GuidePage = ({ isPremium }) => {
         )}
       </div>
 
-      {/* Input Area */}
+      {/* Input Area (Chat) */}
       <div style={{ 
         position: 'fixed', 
         bottom: '85px', 
         left: '50%', 
         transform: 'translateX(-50%)',
-        width: '24%',
+        width: '90%',
         maxWidth: '390px',
         padding: '6px 12px',
         backgroundColor: 'var(--white)',

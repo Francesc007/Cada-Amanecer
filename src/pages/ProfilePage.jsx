@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause, Crown, Check } from 'lucide-react';
+import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause, Crown, Check, BookOpen, PenLine } from 'lucide-react';
 
 const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl, setAvatarUrl }) => {
   const navigate = useNavigate();
@@ -17,22 +17,45 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
   const [selectedPlan, setSelectedPlan] = useState(location.state?.selectedPlan || 'monthly');
 
   const handleActivatePremium = async () => {
+    if (isPremium) return;
     setLoading(true);
     try {
       const deviceId = localStorage.getItem('cada_amanecer_device_id');
-      const { error } = await supabase
+      
+      // Calcular fecha de expiración (7 días a partir de hoy)
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + 7);
+
+      console.log('Intentando activar premium para:', deviceId);
+
+      // Intentar primero con todas las columnas nuevas
+      const { error: fullError } = await supabase
         .from('profiles')
-        .update({ is_premium: true })
+        .update({ 
+          is_premium: true,
+          premium_until: expirationDate.toISOString(),
+          subscription_plan: selectedPlan,
+          is_trial: true
+        })
         .eq('id', deviceId);
       
-      if (error) throw error;
+      if (fullError) {
+        console.warn('Fallo al actualizar con todas las columnas, intentando solo is_premium:', fullError.message);
+        
+        // Fallback: solo activar la columna principal que sabemos que existe
+        const { error: simpleError } = await supabase
+          .from('profiles')
+          .update({ is_premium: true })
+          .eq('id', deviceId);
+          
+        if (simpleError) throw simpleError;
+      }
       
       setIsPremium(true);
       setShowPremiumModal(false);
-      alert('¡Bienvenido a Acceso Total! Ahora puedes disfrutar de todas las funciones.');
     } catch (err) {
-      console.error('Error al activar premium:', err);
-      alert('Hubo un problema al procesar tu solicitud.');
+      console.error('Error final al activar premium:', err.message);
+      alert('Error al activar el acceso. Por favor, intenta de nuevo o contacta a soporte.');
     } finally {
       setLoading(false);
     }
@@ -162,7 +185,6 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
         .eq('id', deviceId);
 
       if (error) throw error;
-      alert('Perfil guardado con éxito');
       navigate('/home');
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -275,17 +297,16 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                 width: '100%', 
                 padding: '12px', 
                 fontSize: '1rem', 
-                backgroundColor: isPremium ? 'var(--white)' : 'var(--accent)', 
-                color: isPremium ? 'var(--accent)' : 'white',
-                boxShadow: isPremium ? 'none' : '0 4px 10px rgba(212, 175, 55, 0.2)',
-                border: isPremium ? '1.5px solid var(--accent)' : 'none'
+                backgroundColor: isPremium ? 'var(--accent)' : 'var(--primary)', 
+                color: isPremium ? 'white' : 'var(--background)',
+                boxShadow: isPremium ? '0 4px 10px rgba(212, 175, 55, 0.2)' : '0 4px 10px rgba(26, 43, 72, 0.2)',
+                border: 'none'
               }} 
-              onClick={() => !isPremium && setShowPremiumModal(true)}
-              disabled={isPremium}
+              onClick={() => setShowPremiumModal(true)}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                {isPremium ? <Check size={20} /> : <Crown size={20} fill="currentColor" />}
-                <span>{isPremium ? 'Suscripción Activa' : 'Acceso Total'}</span>
+                <Crown size={20} fill="currentColor" />
+                <span>{isPremium ? 'Premium' : 'Acceso Total'}</span>
               </div>
             </button>
 
@@ -303,8 +324,22 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
             </button>
           </div>
 
-          {/* Sección de Favoritos */}
+          {/* Sección de Diario */}
           <div style={{ width: '100%', borderTop: '1px solid var(--divider)', paddingTop: '15px' }}>
+            <button 
+              onClick={() => navigate('/diario')}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', width: '100%', padding: '10px 0', cursor: 'pointer', color: 'var(--primary)', fontWeight: 'bold', fontSize: '1rem' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <PenLine size={24} color="var(--primary)" />
+                Mi Diario Personal
+              </div>
+              <ChevronRight size={20} />
+            </button>
+          </div>
+
+          {/* Sección de Favoritos */}
+          <div style={{ width: '100%', borderTop: '1px solid var(--divider)', paddingTop: '5px' }}>
             <button 
               onClick={() => setShowFavorites(!showFavorites)}
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', width: '100%', padding: '10px 0', cursor: 'pointer', color: 'var(--primary)', fontWeight: 'bold', fontSize: '1rem' }}
@@ -464,19 +499,19 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                 <Crown size={32} color="var(--accent)" fill="var(--accent)" />
               </div>
               <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '10px' }}>Acceso Total</h2>
-              <p style={{ color: 'var(--primary)', opacity: 0.7, fontSize: '1rem', lineHeight: '1.5', marginBottom: '25px' }}>
+              <p style={{ color: 'var(--primary)', opacity: 0.7, fontSize: '1rem', lineHeight: '1.5', marginBottom: '15px' }}>
                 Desbloquea todas las funciones, meditaciones guiadas e IA Espiritual ilimitada.
               </p>
 
               {/* Opciones de Planes */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
-                <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
+                <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '5px' }}>
                   Comienza con 7 días gratis
                 </p>
                 <div 
                   onClick={() => setSelectedPlan('monthly')}
                   style={{ 
-                    padding: '4px 12px', 
+                    padding: '2px 12px', 
                     borderRadius: '8px', 
                     border: `1.5px solid ${selectedPlan === 'monthly' ? 'var(--accent)' : 'var(--divider)'}`,
                     backgroundColor: selectedPlan === 'monthly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
@@ -489,7 +524,7 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                 >
                   <div style={{ textAlign: 'left' }}>
                     <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>Mensual</p>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>7 días gratis, luego $49 MXN/mes</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>Cancela cuando quieras</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>$49 MXN</p>
@@ -499,7 +534,7 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                 <div 
                   onClick={() => setSelectedPlan('yearly')}
                   style={{ 
-                    padding: '4px 12px', 
+                    padding: '2px 12px', 
                     borderRadius: '8px', 
                     border: `1.5px solid ${selectedPlan === 'yearly' ? 'var(--accent)' : 'var(--divider)'}`,
                     backgroundColor: selectedPlan === 'yearly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
@@ -515,10 +550,10 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>Anual</p>
                       <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '1px 6px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 'bold' }}>
-                        MEJOR VALOR
+                        OFERTA
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>7 días gratis, luego $499 MXN/año</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>Cancela cuando quieras</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>$499 MXN</p>
@@ -526,21 +561,24 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                 </div>
               </div>
 
-              <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.5, textAlign: 'justify', marginBottom: '20px', lineHeight: '1.3' }}>
+              <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.5, textAlign: 'justify', marginBottom: '15px', lineHeight: '1.3' }}>
                 Tu prueba gratuita de 7 días se convertirá automáticamente en una suscripción de pago a menos que la canceles al menos 24 horas antes de que finalice el período de prueba. Puedes cancelar en cualquier momento desde la configuración de tu cuenta.
               </p>
 
               <button 
                 className="primary-button" 
                 onClick={handleActivatePremium}
-                disabled={loading}
+                disabled={loading || isPremium}
                 style={{ width: '100%', backgroundColor: 'var(--accent)', color: 'white', padding: '15px' }}
               >
-                {loading ? 'Procesando...' : 'Comenzar ahora'}
+                {loading ? 'Procesando...' : (isPremium ? 'Ya eres Premium' : 'Comenzar ahora')}
               </button>
               
-              <p style={{ marginTop: '20px', fontSize: '0.8rem', color: 'var(--primary)', opacity: 0.5 }}>
-                Pago seguro. Sin cargos ocultos.
+              <p 
+                onClick={() => window.open('https://play.google.com/store/account/subscriptions', '_blank')}
+                style={{ marginTop: '15px', fontSize: '0.75rem', color: 'var(--primary)', opacity: 0.6, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                ¿Deseas gestionar o cancelar tu suscripción?
               </p>
             </div>
           </div>
@@ -551,4 +589,3 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
 };
 
 export default ProfilePage;
-

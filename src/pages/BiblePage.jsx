@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ChevronLeft, Search, BookOpen, Star, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, Search, BookOpen, Star, ChevronRight, Loader2, MessageSquare, CheckCircle2 } from 'lucide-react';
 
 // 1. Data Local: Lista completa de libros
 const BIBLE_BOOKS = {
@@ -102,6 +102,8 @@ const BiblePage = ({ isPremium }) => {
   
   const [verses, setVerses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reflection, setReflection] = useState('');
+  const [savingReflection, setSavingReflection] = useState(false);
 
   const filteredBooks = BIBLE_BOOKS[testament].filter(book => 
     book.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -164,6 +166,40 @@ const BiblePage = ({ isPremium }) => {
     }
   };
 
+  const handleSaveReflection = async () => {
+    if (!reflection.trim()) return;
+    
+    setSavingReflection(true);
+    try {
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      const reference = `${selectedBook.name} ${selectedChapter}`;
+      
+      console.log('Intentando guardar reflexión...', { user_id: deviceId, content: reflection, reference });
+
+      const { data, error } = await supabase
+        .from('user_reflections')
+        .insert([{
+          user_id: deviceId,
+          content: reflection,
+          reference: reference
+        }])
+        .select();
+
+      if (error) {
+        console.error('Error de Supabase al guardar:', error);
+        throw error;
+      }
+
+      console.log('Reflexión guardada con éxito:', data);
+      setReflection('');
+    } catch (error) {
+      console.error('Error detallado al guardar reflexión:', error.message);
+      alert(`No se pudo guardar: ${error.message}`);
+    } finally {
+      setSavingReflection(false);
+    }
+  };
+
   const handleBack = () => {
     if (view === 'reader') setView('chapters');
     else if (view === 'chapters') setView('testaments');
@@ -171,14 +207,14 @@ const BiblePage = ({ isPremium }) => {
   };
 
   return (
-    <div style={{ backgroundColor: '#F7F4EB', minHeight: '100vh', padding: '20px', paddingBottom: '100px' }}>
+    <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh', padding: '20px', paddingBottom: '100px' }}>
       <header style={{ 
         display: 'flex', 
         alignItems: 'center', 
         marginBottom: '25px',
         position: 'sticky',
         top: 0,
-        backgroundColor: '#F7F4EB',
+        backgroundColor: 'var(--background)',
         padding: '10px 0',
         zIndex: 10
       }}>
@@ -186,14 +222,11 @@ const BiblePage = ({ isPremium }) => {
           <ChevronLeft size={28} />
         </button>
         <div style={{ marginLeft: '15px' }}>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 'bold', color: '#1A2B48', margin: 0 }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--primary)', margin: 0 }}>
             {view === 'testaments' && 'La Biblia'}
             {view === 'chapters' && selectedBook?.name}
             {view === 'reader' && `${selectedBook?.name} ${selectedChapter}`}
           </h1>
-          {view === 'testaments' && (
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', margin: 0 }}>Selecciona un libro para comenzar</p>
-          )}
         </div>
       </header>
 
@@ -216,8 +249,8 @@ const BiblePage = ({ isPremium }) => {
                   padding: '10px',
                   borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: testament === t ? 'var(--primary)' : 'transparent',
-                  color: testament === t ? 'var(--background)' : 'var(--primary)',
+                  backgroundColor: testament === t ? 'var(--accent)' : 'transparent',
+                  color: testament === t ? 'white' : 'var(--primary)',
                   fontWeight: 'bold',
                   fontSize: '0.75rem',
                   cursor: 'pointer',
@@ -267,7 +300,7 @@ const BiblePage = ({ isPremium }) => {
                   transition: '0.2s all ease'
                 }}
               >
-                <p style={{ color: '#1A2B48', fontWeight: 'bold', fontSize: '1rem', margin: 0 }}>{book.name}</p>
+                <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1rem', margin: 0 }}>{book.name}</p>
                 <p style={{ color: 'var(--text-gray)', fontSize: '0.75rem', margin: 0 }}>{book.chapters} capítulos</p>
               </div>
             ))}
@@ -316,51 +349,104 @@ const BiblePage = ({ isPremium }) => {
       )}
 
       {view === 'reader' && (
-        <div 
-          className="animate-fade-in" 
-          style={{ 
-            backgroundColor: '#FDFCF9', 
-            padding: '40px 25px', 
-            borderRadius: '32px', 
-            border: '1px solid var(--divider)', 
-            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-            minHeight: '60vh'
-          }}
-        >
-          {loading ? (
-            <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              padding: '60px 0',
-              gap: '15px'
-            }}>
-              <Loader2 size={40} className="animate-spin" style={{ color: 'var(--accent)' }} />
-              <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', fontStyle: 'italic' }}>Abriendo las Escrituras...</p>
-            </div>
-          ) : (
-            <div style={{ 
-              fontFamily: '"Georgia", "Times New Roman", serif', 
-              fontSize: '18px', 
-              lineHeight: '1.8', 
-              color: '#2C3E50',
-              textAlign: 'justify'
-            }}>
-              {verses.map(v => (
-                <span key={v.verse_number} style={{ marginBottom: '15px', display: 'inline-block' }}>
-                  <sup style={{ 
-                    color: 'var(--accent)', 
-                    fontWeight: 'bold', 
-                    fontSize: '0.75rem', 
-                    marginRight: '6px',
-                    marginLeft: v.verse_number === 1 ? 0 : '10px'
-                  }}>
-                    {v.verse_number}
-                  </sup>
-                  {v.verse_text}
-                </span>
-              ))}
+        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          <div 
+            style={{ 
+              backgroundColor: 'var(--white)', 
+              padding: '40px 25px', 
+              borderRadius: '32px', 
+              border: '1px solid var(--divider)', 
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              minHeight: '40vh'
+            }}
+          >
+            {loading ? (
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                padding: '60px 0',
+                gap: '15px'
+              }}>
+                <Loader2 size={40} className="animate-spin" style={{ color: 'var(--accent)' }} />
+                <p style={{ color: 'var(--text-gray)', fontSize: '0.9rem', fontStyle: 'italic' }}>Abriendo las Escrituras...</p>
+              </div>
+            ) : (
+              <div style={{ 
+                fontFamily: '"Georgia", "Times New Roman", serif', 
+                fontSize: '18px', 
+                lineHeight: '1.8', 
+                color: 'var(--primary)',
+                textAlign: 'justify'
+              }}>
+                {verses.map(v => (
+                  <span key={v.verse_number} style={{ marginBottom: '15px', display: 'inline-block' }}>
+                    <sup style={{ 
+                      color: 'var(--accent)', 
+                      fontWeight: 'bold', 
+                      fontSize: '0.75rem', 
+                      marginRight: '6px',
+                      marginLeft: v.verse_number === 1 ? 0 : '10px'
+                    }}>
+                      {v.verse_number}
+                    </sup>
+                    {v.verse_text}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {!loading && (
+            <div 
+              style={{ 
+                backgroundColor: 'var(--white)', 
+                padding: '25px', 
+                borderRadius: '24px', 
+                border: '1px solid var(--divider)',
+                boxShadow: 'var(--shadow)'
+              }}
+            >
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <MessageSquare size={20} color="var(--accent)" /> Mi Reflexión Personal
+              </h3>
+              <textarea 
+                value={reflection}
+                onChange={(e) => setReflection(e.target.value)}
+                placeholder="¿Qué te dice esta palabra hoy?..."
+                style={{
+                  width: '100%',
+                  height: '120px',
+                  padding: '15px',
+                  borderRadius: '16px',
+                  border: '1px solid var(--divider)',
+                  backgroundColor: 'var(--background)',
+                  color: 'var(--primary)',
+                  fontSize: '1rem',
+                  fontFamily: 'inherit',
+                  resize: 'none',
+                  outline: 'none',
+                  marginBottom: '15px',
+                  boxSizing: 'border-box'
+                }}
+              />
+              <button 
+                onClick={handleSaveReflection}
+                disabled={!reflection.trim() || savingReflection}
+                className="primary-button"
+                style={{ 
+                  margin: 0, 
+                  width: '100%', 
+                  opacity: (!reflection.trim() || savingReflection) ? 0.6 : 1,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                {savingReflection ? <Loader2 size={20} className="animate-spin" /> : 'Guardar Reflexión'}
+              </button>
             </div>
           )}
         </div>

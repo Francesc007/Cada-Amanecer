@@ -15,9 +15,40 @@ const SettingsPage = () => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleDeleteAccount = () => {
-    alert('Cuenta eliminada permanentemente');
-    navigate('/');
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    try {
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      if (!deviceId) return;
+
+      console.log('Iniciando eliminación de cuenta para:', deviceId);
+
+      // 1. Eliminar datos relacionados primero (por si no hay CASCADE)
+      await supabase.from('daily_progress').delete().eq('user_id', deviceId);
+      await supabase.from('user_reflections').delete().eq('user_id', deviceId);
+
+      // 2. Eliminar el perfil de Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', deviceId);
+
+      if (error) throw error;
+
+      // 3. Limpiar LocalStorage (BORRADO TOTAL)
+      localStorage.clear();
+
+      alert('Tu cuenta y todos tus datos han sido eliminados permanentemente.');
+      
+      // 4. Reiniciar la aplicación completamente para generar un nuevo deviceId
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error detallado al eliminar cuenta:', error);
+      alert('No pudimos eliminar tu cuenta: ' + error.message);
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+    }
   };
 
   const handleSendComment = async () => {
@@ -25,12 +56,12 @@ const SettingsPage = () => {
     
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
       
       const { error } = await supabase
         .from('feedback')
         .insert([{ 
-          user_id: user?.id || null, 
+          user_id: deviceId, 
           message: comment.trim() 
         }]);
 
@@ -167,7 +198,7 @@ const SettingsPage = () => {
           </span>
         </button>
 
-        <button style={{ ...settingRow, color: '#d9534f' }} onClick={() => setShowDeleteModal(true)}>
+        <button style={{ ...settingRow, color: 'var(--text-gray)' }} onClick={() => setShowDeleteModal(true)}>
           <span style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Trash2 size={20} /> Eliminar cuenta
           </span>

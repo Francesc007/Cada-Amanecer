@@ -68,6 +68,17 @@ body.dark-mode {
   height: 65vh;
   width: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+.welcome-image-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 150px; /* Altura del degradado */
+  background: linear-gradient(to bottom, transparent, var(--background));
+  pointer-events: none;
 }
 
 .welcome-image {
@@ -201,6 +212,25 @@ body.dark-mode {
   border-color: var(--accent);
   background-color: #FFFBEA;
   color: var(--accent);
+}
+
+.onboarding-input {
+  width: 100%;
+  padding: 18px 25px;
+  border-radius: 8px;
+  border: 1.5px solid var(--divider);
+  background-color: var(--white);
+  color: var(--primary);
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  outline: none;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.onboarding-input:focus {
+  border-color: var(--accent);
 }
 
 /* --- Home --- */
