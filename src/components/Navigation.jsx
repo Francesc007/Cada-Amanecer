@@ -25,7 +25,7 @@ export const PremiumBadge = ({ size = 10 }) => (
 );
 
 // --- COMPONENTE: SUBSCRIPTION MODAL ---
-export const SubscriptionModal = ({ onClose, onUpgrade }) => {
+export const SubscriptionModal = ({ onClose, onUpgrade, title = "Función Exclusiva", description = "Prueba todas nuestras funciones premium gratis durante 7 días." }) => {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   
   const handleAction = () => {
@@ -33,7 +33,7 @@ export const SubscriptionModal = ({ onClose, onUpgrade }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.6)' }}>
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 4000, backgroundColor: 'rgba(0,0,0,0.6)' }}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
         backgroundColor: 'var(--background)', 
         borderRadius: '32px', 
@@ -48,7 +48,7 @@ export const SubscriptionModal = ({ onClose, onUpgrade }) => {
       }}>
         <div style={{ position: 'relative', height: '140px', width: '100%' }}>
           <img 
-            src="/biblia.jpg" 
+            src="/biblia 2.avif" 
             alt="Acceso Total" 
             style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
           />
@@ -65,9 +65,8 @@ export const SubscriptionModal = ({ onClose, onUpgrade }) => {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
             <Crown size={32} color="var(--accent)" fill="var(--accent)" />
           </div>
-          <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '10px' }}>Función Exclusiva</h2>
-          <p style={{ color: 'var(--primary)', opacity: 0.8, fontSize: '0.95rem', marginBottom: '20px', lineHeight: '1.4' }}>
-            Prueba todas nuestras funciones premium gratis durante 7 días.
+          <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '10px' }}>{title}</h2>
+          <p style={{ color: 'var(--primary)', opacity: 0.8, fontSize: '0.95rem', marginBottom: '20px', lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: description }}>
           </p>
           
           <button 
@@ -100,11 +99,24 @@ export const Navbar = ({ isPremium, setIsPremium }) => {
   const handleTabClick = (tab) => {
     if (tab.premium && !isPremium) {
       setPendingTab(tab.path);
+      const messages = {
+        '/explore': {
+          title: 'Explora Oraciones',
+          desc: 'Como usuario Premium, accede a cientos de oraciones, meditaciones y contenido exclusivo para tu fe.'
+        },
+        '/guide': {
+          title: 'Guía Espiritual',
+          desc: 'Ten conversaciones profundas y recibe acompañamiento espiritual personalizado con nuestra IA Guía.'
+        }
+      };
+      setPaywallConfig(messages[tab.path] || { title: 'Función Premium', desc: 'Prueba todas nuestras funciones premium gratis durante 7 días.' });
       setShowPaywall(true);
       return;
     }
     navigate(tab.path);
   };
+
+  const [paywallConfig, setPaywallConfig] = useState({ title: '', desc: '' });
 
   // No mostrar el navbar en la bienvenida u onboarding
   if (location.pathname === '/' || location.pathname === '/onboarding') {
@@ -167,6 +179,8 @@ export const Navbar = ({ isPremium, setIsPremium }) => {
       </nav>
       {showPaywall && (
         <SubscriptionModal 
+          title={paywallConfig.title}
+          description={paywallConfig.desc}
           onClose={() => setShowPaywall(false)} 
           onUpgrade={() => {
             setShowPaywall(false);

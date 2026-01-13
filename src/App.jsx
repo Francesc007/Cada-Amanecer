@@ -22,11 +22,57 @@ const WelcomeScreen = () => {
   const content = {
     terms: {
       title: 'Términos y Condiciones',
-      text: 'Al usar Cada Amanecer, te comprometes a hacer un uso personal y respetuoso de los contenidos. Queda prohibida la reproducción comercial o redistribución de las reflexiones sin consentimiento expreso. Nos reservamos el derecho de actualizar estos términos para mejorar tu experiencia.'
+      text: (
+        <div className="custom-scrollbar" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '10px' }}>
+          <p><strong>Última actualización: 13 de enero de 2026</strong></p>
+          <p><strong>1. Aceptación de los términos</strong><br/>Al usar <strong>Cada Amanecer</strong>, aceptas estos Términos y Condiciones. Si no estás de acuerdo, por favor no utilices la App.</p>
+          <p><strong>2. Uso de la App</strong><br/>La App ofrece contenido espiritual, reflexiones y una guía interactiva con fines de acompañamiento personal. El usuario se compromete a:
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Usar la App de manera respetuosa.</li>
+              <li>No utilizarla con fines ilegales o abusivos.</li>
+            </ul>
+          </p>
+          <p><strong>3. Naturaleza del contenido</strong><br/>El contenido no sustituye asesoramiento profesional, médico, psicológico o pastoral. La Guía Espiritual no realiza diagnósticos ni emite juicios.</p>
+          <p><strong>4. Inteligencia Artificial</strong><br/>Las respuestas son generadas mediante inteligencia artificial:
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Pueden no ser siempre precisas.</li>
+              <li>No representan opiniones humanas ni consejo profesional.</li>
+            </ul>
+          </p>
+          <p><strong>5. Suscripciones y pagos</strong><br/>La App puede ofrecer contenido gratuito y funciones premium mediante suscripción o pagos únicos. Las condiciones específicas se mostrarán claramente antes de realizar cualquier pago. Las suscripciones pueden cancelarse desde la plataforma correspondiente (App Store / Google Play).</p>
+          <p><strong>6. Propiedad intelectual</strong><br/>Todo el contenido de la App, incluyendo textos, diseño y estructura, es propiedad de <strong>Cada Amanecer</strong>, salvo que se indique lo contrario.</p>
+          <p><strong>7. Limitación de responsabilidad</strong><br/>No nos hacemos responsables por decisiones tomadas por el usuario basadas en el contenido de la App o interrupciones técnicas.</p>
+          <p><strong>8. Terminación</strong><br/>Nos reservamos el derecho de suspender el acceso si se incumplen estos términos.</p>
+          <p><strong>9. Legislación aplicable</strong><br/>Estos términos se rigen por las leyes de México.</p>
+          <p><strong>10. Contacto</strong><br/>Correo: </p>
+        </div>
+      )
     },
     privacy: {
       title: 'Política de Privacidad',
-      text: 'Tus datos son sagrados para nosotros. Solo almacenamos la información necesaria (como tu nombre y preferencias) para ofrecerte una experiencia personalizada. Nunca compartiremos tus datos con terceros sin tu permiso explícito.'
+      text: (
+        <div className="custom-scrollbar" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '10px' }}>
+          <p><strong>Última actualización: 13 de enero de 2026</strong></p>
+          <p><strong>1. Introducción</strong><br/>Esta Política de Privacidad describe cómo <strong>Cada Amanecer</strong> (“la App”) recopila, utiliza y protege la información de los usuarios. Al utilizar la App, aceptas las prácticas descritas en este documento.</p>
+          <p><strong>2. Información que recopilamos</strong><br/>
+            <strong>2.1 Información proporcionada por el usuario</strong><br/>Nombre: utilizado únicamente para personalizar la experiencia dentro de la App. Este dato se almacena localmente en el dispositivo y no se envía a servidores propios.<br/>
+            <strong>2.2 Conversaciones y contenido</strong><br/>Los mensajes en la sección Guía se utilizan únicamente para generar respuestas en tiempo real mediante IA. No se almacenan como historial ni se asocian a perfiles personales.
+          </p>
+          <p><strong>3. Uso de la información</strong><br/>Utilizamos la información únicamente para:
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Personalizar la experiencia del usuario.</li>
+              <li>Proporcionar respuestas relevantes en la Guía Espiritual.</li>
+              <li>Mejorar el funcionamiento general de la App.</li>
+            </ul>
+          </p>
+          <p><strong>4. Uso de servicios de terceros</strong><br/>La App utiliza servicios como OpenAI para generar respuestas. El texto se procesa de acuerdo con sus políticas. No vendemos ni compartimos datos personales con fines comerciales.</p>
+          <p><strong>5. Almacenamiento y seguridad</strong><br/>La información básica se almacena localmente. Tomamos medidas razonables para proteger la información, aunque ningún sistema es completamente seguro.</p>
+          <p><strong>6. Derechos del usuario</strong><br/>El usuario puede eliminar sus datos borrando la App o restableciendo su configuración.</p>
+          <p><strong>7. Menores de edad</strong><br/>La App no está dirigida a menores de 13 años. Los tutores pueden contactarnos para solicitar la eliminación de cualquier información proporcionada por un menor.</p>
+          <p><strong>8. Cambios a esta política</strong><br/>Nos reservamos el derecho de actualizar esta política. Los cambios se reflejarán en esta sección.</p>
+          <p><strong>9. Contacto</strong><br/>Correo de contacto: </p>
+        </div>
+      )
     }
   };
 
@@ -56,15 +102,22 @@ const WelcomeScreen = () => {
 
       {modalContent && (
         <div className="modal-overlay" onClick={() => setModalContent(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--background)', borderTop: '4px solid var(--accent)' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
+            backgroundColor: 'var(--background)', 
+            borderTop: '4px solid var(--accent)',
+            padding: '25px',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold' }}>{content[modalContent].title}</h2>
-              <button onClick={() => setModalContent(null)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', margin: 0 }}>{content[modalContent].title}</h2>
+              <button onClick={() => setModalContent(null)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '5px' }}>
                 <X size={24} />
               </button>
             </div>
-            <p style={{ color: 'var(--primary)', lineHeight: '1.6', textAlign: 'justify' }}>{content[modalContent].text}</p>
-            <button className="primary-button" style={{ marginTop: '30px' }} onClick={() => setModalContent(null)}>Entendido</button>
+            <div style={{ color: 'var(--primary)', lineHeight: '1.6', fontSize: '0.95rem' }}>{content[modalContent].text}</div>
+            <button className="primary-button" style={{ marginTop: '20px', padding: '15px' }} onClick={() => setModalContent(null)}>Entendido</button>
           </div>
         </div>
       )}
@@ -183,8 +236,46 @@ const HomeScreen = ({
   const [bgImage, setBgImage] = useState('');
   const [lastQuoteImgId, setLastQuoteImgId] = useState(null);
   const [availableBackgrounds, setAvailableBackgrounds] = useState([]);
+  const [paywallMessage, setPaywallMessage] = useState({
+    title: 'Escucha tu oración diaria',
+    desc: 'Comienza tu prueba de 7 días gratis.<br/> Después solo <strong>$390 MXN/año</strong>.'
+  });
 
   const days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+  const handleDayClick = async (dateStr, isMissed) => {
+    if (!isMissed) return;
+    
+    if (!isPremium) {
+      setPaywallMessage({
+        title: "Recupera tu racha",
+        desc: "Como usuario Premium, puedes desbloquear días pasados y nunca perder tu progreso.<br/>Prueba 7 días gratis."
+      });
+      setShowPaywall(true);
+      return;
+    }
+    
+    // Lógica para Premium: Desbloquear día
+    try {
+      const deviceId = localStorage.getItem('cada_amanecer_device_id');
+      const { error } = await supabase
+        .from('daily_progress')
+        .upsert({
+          user_id: deviceId,
+          fecha: dateStr,
+          cita_completada: true,
+          lectura_completada: true,
+          reflexion_completada: true
+        }, { onConflict: 'user_id,fecha' });
+        
+      if (error) throw error;
+      
+      setCompletedDays(prev => ({ ...prev, [dateStr]: true }));
+      alert("¡Día recuperado! Tu racha se mantiene firme.");
+    } catch (e) {
+      console.error("Error al desbloquear día:", e);
+    }
+  };
 
   useEffect(() => {
     const fetchBackgrounds = async () => {
@@ -306,6 +397,10 @@ const HomeScreen = ({
 
   const handlePlayClick = () => {
     if (!isPremium) {
+      setPaywallMessage({
+        title: 'Escucha tu oración',
+        desc: 'Prueba todas nuestras funciones premium gratis durante 7 días y escucha tu oración diaria.'
+      });
       setShowPaywall(true);
       return;
     }
@@ -569,18 +664,38 @@ const HomeScreen = ({
             const isToday = dateStr === todayStr;
             const isCompleted = completedDays[dateStr] || (isToday && tareasCompletadas.cita && tareasCompletadas.lectura);
             
+            // Un día se considera "perdido" si es pasado y no está completado
+            const todayStart = new Date();
+            todayStart.setHours(0,0,0,0);
+            const isPast = dateForDay < todayStart;
+            const isMissed = isPast && !isCompleted;
+            
             return (
-              <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', position: 'relative', width: '30px' }}>
+              <div 
+                key={index} 
+                onClick={() => handleDayClick(dateStr, isMissed)}
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '4px', 
+                  position: 'relative', 
+                  width: '30px',
+                  cursor: isMissed ? 'pointer' : 'default'
+                }}
+              >
                 <span style={{ 
                   fontSize: '1rem', 
                   fontWeight: 'bold', 
-                  color: (isToday || isCompleted) ? 'var(--accent)' : 'var(--text-gray)',
+                  color: isMissed ? '#E57373' : (isToday || isCompleted) ? 'var(--accent)' : 'var(--text-gray)',
                   marginBottom: '2px'
                 }}>
                   {day}
                 </span>
                 {isCompleted ? (
                   <Star size={16} color="var(--accent)" fill="var(--accent)" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))' }} />
+                ) : isMissed ? (
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#E57373', opacity: 0.6 }} />
                 ) : (
                   isToday && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent)' }} />
                 )}
@@ -597,45 +712,115 @@ const HomeScreen = ({
         <h1 style={{ marginBottom: '25px', fontWeight: 'bold', color: 'var(--primary)' }}>Paz contigo, {userName}</h1>
 
         {/* Sección: Mi Camino de Hoy */}
-        <div style={{ width: '100%', maxWidth: '400px', padding: '0 20px', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ width: '100%', maxWidth: '400px', padding: '0 20px', marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <h3 style={{ textAlign: 'left', fontSize: '0.9rem', color: 'var(--primary)', opacity: 0.8, marginBottom: '5px' }}>Mi Camino de Hoy</h3>
           
           {[
-            { id: 'cita', label: 'Cita del Día', icon: <Feather size={20} />, action: openQuoteModal },
-            { id: 'lectura', label: 'Lectura Diaria', icon: <Book size={20} />, action: openReadingModal },
-            { id: 'reflexion', label: 'Mi Reflexión', icon: <MessageSquare size={20} />, action: () => setShowNoteModal(true) },
+            { 
+              id: 'cita', 
+              label: 'Cita del Día', 
+              icon: <Feather size={20} />, 
+              action: openQuoteModal,
+              image: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=800&q=80'
+            },
+            { 
+              id: 'lectura', 
+              label: 'Lectura Diaria', 
+              icon: <Book size={20} />, 
+              action: openReadingModal,
+              image: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=800&q=80'
+            },
+            { 
+              id: 'reflexion', 
+              label: 'Mi Reflexión', 
+              icon: <MessageSquare size={20} />, 
+              action: () => setShowNoteModal(true) ,
+              image: 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=800&q=80'
+            },
           ].map((item) => (
             <button
               key={item.id}
               onClick={item.action}
               style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '16px 20px',
+                padding: '0',
+                height: '85px',
                 backgroundColor: 'var(--white)',
-                borderRadius: '16px',
+                borderRadius: '20px',
                 border: '1px solid var(--divider)',
                 cursor: 'pointer',
                 boxShadow: 'var(--shadow)',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                overflow: 'hidden'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--primary)' }}>
-                <div style={{ color: 'var(--accent)' }}>{item.icon}</div>
-                <span style={{ fontWeight: '600' }}>{item.label}</span>
+              {/* Imagen de Fondo */}
+              <img 
+                src={item.image} 
+                alt={item.label} 
+                style={{ 
+                  position: 'absolute', 
+                  inset: 0, 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  opacity: 0.9
+                }} 
+              />
+              
+              {/* Overlay para Legibilidad */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0.3))',
+                zIndex: 1
+              }} />
+
+              {/* Contenido */}
+              <div style={{ 
+                position: 'relative', 
+                zIndex: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '15px', 
+                padding: '0 20px',
+                color: 'white',
+                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+              }}>
+                <div style={{ 
+                  color: 'var(--accent)', 
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                  padding: '10px',
+                  borderRadius: '12px',
+                  backdropFilter: 'blur(5px)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  {item.icon}
+                </div>
+                <span style={{ fontWeight: '700', fontSize: '1.1rem', letterSpacing: '0.5px' }}>{item.label}</span>
               </div>
+
               {item.id !== 'reflexion' && (
                 <div style={{ 
-                  width: '18px', 
-                  height: '18px', 
+                  position: 'relative',
+                  zIndex: 2,
+                  marginRight: '20px',
+                  width: '24px', 
+                  height: '24px', 
                   borderRadius: '50%', 
-                  border: `2px solid ${tareasCompletadas[item.id] ? '#D4AF37' : '#E0E0E0'}`,
+                  border: `2.5px solid ${tareasCompletadas[item.id] ? '#D4AF37' : 'rgba(255,255,255,0.5)'}`,
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: tareasCompletadas[item.id] ? '#D4AF37' : 'transparent'
+                  backgroundColor: tareasCompletadas[item.id] ? '#D4AF37' : 'rgba(0,0,0,0.2)',
+                  boxShadow: tareasCompletadas[item.id] ? '0 0 10px rgba(212, 175, 55, 0.5)' : 'none'
                 }}>
+                  {tareasCompletadas[item.id] && <CheckCircle size={14} color="white" fill="currentColor" />}
                 </div>
               )}
             </button>
@@ -949,15 +1134,15 @@ const HomeScreen = ({
       )}
 
       {showPaywall && (
-        <div className="modal-overlay" onClick={() => setShowPaywall(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'var(--background)', borderRadius: '30px 30px 0 0', padding: '40px 30px', textAlign: 'center', border: '1px solid var(--divider)' }}>
-            <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>PREMIUM</span>
-            <h2 className="modal-title" style={{ marginTop: '20px', color: 'var(--primary)', fontWeight: 'bold' }}>Escucha tu oración diaria</h2>
-            <p className="modal-desc" style={{ color: 'var(--primary)', opacity: 0.8, lineHeight: '1.6' }}>Comienza tu prueba de 7 días gratis.<br/> Después solo <strong>$49 MXN/mes</strong>.</p>
-            <button className="primary-button" style={{ backgroundColor: 'var(--accent)', color: 'white', marginTop: '20px', border: 'none' }} onClick={() => { setIsPremium(true); setShowPaywall(false); }}>Activar Prueba Gratuita</button>
-            <p style={{ marginTop: '15px', fontSize: '0.8rem', color: 'var(--primary)', opacity: 0.5 }}>Cancela en cualquier momento</p>
-          </div>
-        </div>
+        <SubscriptionModal 
+          title={paywallMessage.title}
+          description={paywallMessage.desc}
+          onClose={() => setShowPaywall(false)}
+          onUpgrade={() => {
+            setShowPaywall(false);
+            navigate('/profile', { state: { openPremium: true } });
+          }}
+        />
       )}
     </div>
   );

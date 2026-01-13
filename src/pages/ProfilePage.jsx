@@ -425,7 +425,7 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
             {/* Imagen Superior (Estilo Tablero de Iglesia) */}
             <div style={{ position: 'relative', height: '180px', width: '100%' }}>
               <img 
-                src="/biblia.jpg" 
+                src="/biblia 2.avif" 
                 alt="Acceso Total" 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
@@ -455,52 +455,54 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                 <div 
                   onClick={() => setSelectedPlan('monthly')}
                   style={{ 
-                    padding: '2px 12px', 
-                    borderRadius: '8px', 
+                    padding: '12px 15px', 
+                    borderRadius: '12px', 
                     border: `1.5px solid ${selectedPlan === 'monthly' ? 'var(--accent)' : 'var(--divider)'}`,
                     backgroundColor: selectedPlan === 'monthly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: 'column',
+                    gap: '4px',
                     cursor: 'pointer',
                     transition: '0.1s'
                   }}
                 >
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>Mensual</p>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>Cancela cuando quieras</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.2rem', margin: 0 }}>Mensual</p>
+                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem', margin: 0 }}>$49 MXN</p>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>$49 MXN</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--primary)', opacity: 0.6, margin: 0 }}>Cancela cuando quieras</p>
+                    <div style={{ height: '14px' }}></div> {/* Espaciador para igualar altura */}
                   </div>
                 </div>
 
                 <div 
                   onClick={() => setSelectedPlan('yearly')}
                   style={{ 
-                    padding: '2px 12px', 
-                    borderRadius: '8px', 
+                    padding: '12px 15px', 
+                    borderRadius: '12px', 
                     border: `1.5px solid ${selectedPlan === 'yearly' ? 'var(--accent)' : 'var(--divider)'}`,
                     backgroundColor: selectedPlan === 'yearly' ? 'rgba(212, 175, 55, 0.05)' : 'var(--white)',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: 'column',
+                    gap: '4px',
                     cursor: 'pointer',
                     transition: '0.1s',
                     position: 'relative'
                   }}
                 >
-                  <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>Anual</p>
-                      <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '1px 6px', borderRadius: '4px', fontSize: '0.55rem', fontWeight: 'bold' }}>
-                        OFERTA
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.2rem', margin: 0 }}>Anual</p>
+                      <span style={{ backgroundColor: 'var(--accent)', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                        MEJOR OPCIÓN
                       </span>
                     </div>
-                    <p style={{ fontSize: '0.65rem', color: 'var(--primary)', opacity: 0.6 }}>Cancela cuando quieras</p>
+                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem', margin: 0 }}>$390 MXN</p>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '1.05rem' }}>$499 MXN</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--primary)', opacity: 0.6, margin: 0 }}>Cancela cuando quieras</p>
+                    <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.7rem', margin: 0 }}>AHORRA 33%</p>
                   </div>
                 </div>
               </div>

@@ -2,18 +2,77 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../lib/ThemeContext';
-import { ChevronLeft, ChevronRight, ChevronDown, LogOut, Trash2, Send } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, LogOut, Trash2, Send, X } from 'lucide-react';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { isDarkMode, toggleDarkMode } = useTheme();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [showTerms, setShowTerms] = useState(false);
-  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [openSection, setOpenSection] = useState(null); // 'about', 'comments'
+  const [modalContent, setModalContent] = useState(null); // 'terms', 'privacy'
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const policyContent = {
+    terms: {
+      title: 'Términos y Condiciones',
+      text: (
+        <div className="custom-scrollbar" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '10px' }}>
+          <p><strong>Última actualización: 13 de enero de 2026</strong></p>
+          <p><strong>1. Aceptación de los términos</strong><br/>Al usar <strong>Cada Amanecer</strong>, aceptas estos Términos y Condiciones. Si no estás de acuerdo, por favor no utilices la App.</p>
+          <p><strong>2. Uso de la App</strong><br/>La App ofrece contenido espiritual, reflexiones y una guía interactiva con fines de acompañamiento personal. El usuario se compromete a:
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Usar la App de manera respetuosa.</li>
+              <li>No utilizarla con fines ilegales o abusivos.</li>
+            </ul>
+          </p>
+          <p><strong>3. Naturaleza del contenido</strong><br/>El contenido no sustituye asesoramiento profesional, médico, psicológico o pastoral. La Guía Espiritual no realiza diagnósticos ni emite juicios.</p>
+          <p><strong>4. Inteligencia Artificial</strong><br/>Las respuestas son generadas mediante inteligencia artificial:
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Pueden no ser siempre precisas.</li>
+              <li>No representan opiniones humanas ni consejo profesional.</li>
+            </ul>
+          </p>
+          <p><strong>5. Suscripciones y pagos</strong><br/>La App puede ofrecer contenido gratuito y funciones premium mediante suscripción o pagos únicos. Las condiciones específicas se mostrarán claramente antes de realizar cualquier pago. Las suscripciones pueden cancelarse desde la plataforma correspondiente (App Store / Google Play).</p>
+          <p><strong>6. Propiedad intelectual</strong><br/>Todo el contenido de la App, incluyendo textos, diseño y estructura, es propiedad de <strong>Cada Amanecer</strong>, salvo que se indique lo contrario.</p>
+          <p><strong>7. Limitación de responsabilidad</strong><br/>No nos hacemos responsables por decisiones tomadas por el usuario basadas en el contenido de la App o interrupciones técnicas.</p>
+          <p><strong>8. Terminación</strong><br/>Nos reservamos el derecho de suspender el acceso si se incumplen estos términos.</p>
+          <p><strong>9. Legislación aplicable</strong><br/>Estos términos se rigen por las leyes de México.</p>
+          <p><strong>10. Contacto</strong><br/>Correo: </p>
+        </div>
+      )
+    },
+    privacy: {
+      title: 'Política de Privacidad',
+      text: (
+        <div className="custom-scrollbar" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: '10px' }}>
+          <p><strong>Última actualización: 13 de enero de 2026</strong></p>
+          <p><strong>1. Introducción</strong><br/>Esta Política de Privacidad describe cómo <strong>Cada Amanecer</strong> (“la App”) recopila, utiliza y protege la información de los usuarios. Al utilizar la App, aceptas las prácticas descritas en este documento.</p>
+          <p><strong>2. Información que recopilamos</strong><br/>
+            <strong>2.1 Información proporcionada por el usuario</strong><br/>Nombre: utilizado únicamente para personalizar la experiencia dentro de la App. Este dato se almacena localmente en el dispositivo y no se envía a servidores propios.<br/>
+            <strong>2.2 Conversaciones y contenido</strong><br/>Los mensajes en la sección Guía se utilizan únicamente para generar respuestas en tiempo real mediante IA. No se almacenan como historial ni se asocian a perfiles personales.
+          </p>
+          <p><strong>3. Uso de la información</strong><br/>Utilizamos la información únicamente para:
+            <ul style={{ paddingLeft: '20px' }}>
+              <li>Personalizar la experiencia del usuario.</li>
+              <li>Proporcionar respuestas relevantes en la Guía Espiritual.</li>
+              <li>Mejorar el funcionamiento general de la App.</li>
+            </ul>
+          </p>
+          <p><strong>4. Uso de servicios de terceros</strong><br/>La App utiliza servicios como OpenAI para generar respuestas. El texto se procesa de acuerdo con sus políticas. No vendemos ni compartimos datos personales con fines comerciales.</p>
+          <p><strong>5. Almacenamiento y seguridad</strong><br/>La información básica se almacena localmente. Tomamos medidas razonables para proteger la información, aunque ningún sistema es completamente seguro.</p>
+          <p><strong>6. Derechos del usuario</strong><br/>El usuario puede eliminar sus datos borrando la App o restableciendo su configuración.</p>
+          <p><strong>7. Menores de edad</strong><br/>La App no está dirigida a menores de 13 años. Los tutores pueden contactarnos para solicitar la eliminación de cualquier información proporcionada por un menor.</p>
+          <p><strong>8. Cambios a esta política</strong><br/>Nos reservamos el derecho de actualizar esta política. Los cambios se reflejarán en esta sección.</p>
+          <p><strong>9. Contacto</strong><br/>Correo de contacto: </p>
+        </div>
+      )
+    }
+  };
+
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? null : section);
+  };
 
   const handleDeleteAccount = async () => {
     setLoading(true);
@@ -69,7 +128,7 @@ const SettingsPage = () => {
 
       alert('Gracias por ayudarnos a mejorar Cada Amanecer');
       setComment('');
-      setShowComments(false);
+      setOpenSection(null);
     } catch (error) {
       console.error('Error sending feedback:', error);
       alert('Error al enviar: ' + error.message);
@@ -101,11 +160,11 @@ const SettingsPage = () => {
 
         {/* Acerca de */}
         <div style={{ borderBottom: '1px solid var(--divider)' }}>
-          <button style={{ ...settingRow, borderBottom: 'none' }} onClick={() => setShowAbout(!showAbout)}>
+          <button style={{ ...settingRow, borderBottom: 'none' }} onClick={() => toggleSection('about')}>
             <span style={{ fontWeight: 'bold' }}>Acerca de Cada Amanecer</span>
-            {showAbout ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+            {openSection === 'about' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
           </button>
-          {showAbout && (
+          {openSection === 'about' && (
             <div style={accordionContent}>
               Cada Amanecer nace como un espacio de pausa y reflexión en el ajetreo diario. Nuestra finalidad es conectar tu espíritu con la sabiduría milenaria de forma sencilla, brindándote una palabra de aliento y un momento de paz para comenzar tu jornada con propósito y esperanza renovada.
             </div>
@@ -114,11 +173,11 @@ const SettingsPage = () => {
 
         {/* Comentarios */}
         <div style={{ borderBottom: '1px solid var(--divider)' }}>
-          <button style={{ ...settingRow, borderBottom: 'none' }} onClick={() => setShowComments(!showComments)}>
+          <button style={{ ...settingRow, borderBottom: 'none' }} onClick={() => toggleSection('comments')}>
             <span style={{ fontWeight: 'bold' }}>Comentarios</span>
-            {showComments ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+            {openSection === 'comments' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
           </button>
-          {showComments && (
+          {openSection === 'comments' && (
             <div style={accordionContent}>
               <textarea 
                 value={comment}
@@ -167,28 +226,18 @@ const SettingsPage = () => {
 
         {/* Términos */}
         <div style={{ borderBottom: '1px solid var(--divider)' }}>
-          <button style={{ ...settingRow, borderBottom: 'none' }} onClick={() => setShowTerms(!showTerms)}>
+          <button style={settingRow} onClick={() => setModalContent('terms')}>
             <span style={{ fontWeight: 'bold' }}>Términos y Condiciones</span>
-            {showTerms ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+            <ChevronRight size={20} />
           </button>
-          {showTerms && (
-            <div style={accordionContent}>
-              Al usar Cada Amanecer, te comprometes a hacer un uso personal y respetuoso de los contenidos. Queda prohibida la reproducción comercial o redistribución de las reflexiones sin consentimiento expreso.
-            </div>
-          )}
         </div>
 
         {/* Privacidad */}
         <div style={{ borderBottom: '1px solid var(--divider)' }}>
-          <button style={{ ...settingRow, borderBottom: 'none' }} onClick={() => setShowPrivacy(!showPrivacy)}>
+          <button style={settingRow} onClick={() => setModalContent('privacy')}>
             <span style={{ fontWeight: 'bold' }}>Política de Privacidad</span>
-            {showPrivacy ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+            <ChevronRight size={20} />
           </button>
-          {showPrivacy && (
-            <div style={accordionContent}>
-              Tus datos son sagrados para nosotros. Solo almacenamos la información necesaria para ofrecerte una experiencia personalizada. Nunca compartiremos tus datos con terceros sin tu permiso explícito.
-            </div>
-          )}
         </div>
 
         {/* Acciones de Cuenta */}
@@ -204,6 +253,29 @@ const SettingsPage = () => {
           </span>
         </button>
       </div>
+
+      {/* Modal de Políticas y Términos (Mismo formato que Bienvenida) */}
+      {modalContent && (
+        <div className="modal-overlay" onClick={() => setModalContent(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
+            backgroundColor: 'var(--background)', 
+            borderTop: '4px solid var(--accent)',
+            padding: '25px',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold', margin: 0 }}>{policyContent[modalContent].title}</h2>
+              <button onClick={() => setModalContent(null)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '5px' }}>
+                <X size={24} />
+              </button>
+            </div>
+            <div style={{ color: 'var(--primary)', lineHeight: '1.6', fontSize: '0.95rem' }}>{policyContent[modalContent].text}</div>
+            <button className="primary-button" style={{ marginTop: '20px', padding: '15px' }} onClick={() => setModalContent(null)}>Entendido</button>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Eliminación */}
       {showDeleteModal && (

@@ -44,26 +44,6 @@ const GuidePage = ({ isPremium }) => {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef(null);
 
-  // Cargar historial si existe (opcional, para persistencia en sesión)
-  useEffect(() => {
-    try {
-      const savedChat = sessionStorage.getItem('guia_chat_session');
-      if (savedChat) {
-        setMessages(JSON.parse(savedChat));
-      }
-    } catch (e) {
-      console.error("Error cargando historial de chat:", e);
-      sessionStorage.removeItem('guia_chat_session');
-    }
-  }, []);
-
-  // Guardar historial al cambiar
-  useEffect(() => {
-    if (messages.length > 1) {
-      sessionStorage.setItem('guia_chat_session', JSON.stringify(messages));
-    }
-  }, [messages]);
-
   // Auto-scroll al final
   useEffect(() => {
     if (scrollRef.current) {

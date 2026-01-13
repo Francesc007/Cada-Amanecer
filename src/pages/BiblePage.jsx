@@ -135,9 +135,9 @@ const BiblePage = ({ isPremium }) => {
       // Mapeo específico para libros con prefijo 'S.' (sin espacio) en la base de datos
       let libroParaConsultar = bookName;
       
-      if (bookName === 'Mateo') libroParaConsultar = 'S.Mateo';
-      if (bookName === 'Marcos') libroParaConsultar = 'S.Marcos';
-      if (bookName === 'Lucas') libroParaConsultar = 'S.Lucas';
+      if (bookName === 'Mateo') libroParaConsultar = 'S. Mateo';
+      if (bookName === 'Marcos') libroParaConsultar = 'S. Marcos';
+      if (bookName === 'Lucas') libroParaConsultar = 'S. Lucas';
       if (bookName === 'Juan') libroParaConsultar = 'S.Juan';
 
       const { data, error } = await supabase
@@ -397,58 +397,6 @@ const BiblePage = ({ isPremium }) => {
               </div>
             )}
           </div>
-
-          {!loading && (
-            <div 
-              style={{ 
-                backgroundColor: 'var(--white)', 
-                padding: '25px', 
-                borderRadius: '24px', 
-                border: '1px solid var(--divider)',
-                boxShadow: 'var(--shadow)'
-              }}
-            >
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <MessageSquare size={20} color="var(--accent)" /> Mi Reflexión Personal
-              </h3>
-              <textarea 
-                value={reflection}
-                onChange={(e) => setReflection(e.target.value)}
-                placeholder="¿Qué te dice esta palabra hoy?..."
-                style={{
-                  width: '100%',
-                  height: '120px',
-                  padding: '15px',
-                  borderRadius: '16px',
-                  border: '1px solid var(--divider)',
-                  backgroundColor: 'var(--background)',
-                  color: 'var(--primary)',
-                  fontSize: '1rem',
-                  fontFamily: 'inherit',
-                  resize: 'none',
-                  outline: 'none',
-                  marginBottom: '15px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <button 
-                onClick={handleSaveReflection}
-                disabled={!reflection.trim() || savingReflection}
-                className="primary-button"
-                style={{ 
-                  margin: 0, 
-                  width: '100%', 
-                  opacity: (!reflection.trim() || savingReflection) ? 0.6 : 1,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
-                {savingReflection ? <Loader2 size={20} className="animate-spin" /> : 'Guardar Reflexión'}
-              </button>
-            </div>
-          )}
         </div>
       )}
     </div>
