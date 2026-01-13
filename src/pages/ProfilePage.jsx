@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Camera, ChevronLeft, Settings as SettingsIcon, Loader2, Heart, ChevronRight, X, Play, Pause, Crown, Check, BookOpen, PenLine } from 'lucide-react';
+import { speakText } from '../utils/tts';
 
 const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl, setAvatarUrl }) => {
   const navigate = useNavigate();
@@ -360,14 +361,12 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
                     {favorites.slice(0, 3).map(fav => (
                       <div 
                         key={fav.id} 
-                        onClick={() => setSelectedFavorite(fav.fullContent)}
                         style={{ 
                           padding: '5px 15px', 
                           borderRadius: '12px', 
                           backgroundColor: 'var(--white)', 
                           border: '1px solid var(--divider)', 
                           boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
-                          cursor: 'pointer',
                           position: 'relative'
                         }}
                       >
@@ -408,61 +407,6 @@ const ProfilePage = ({ isPremium, setIsPremium, userName, setUserName, avatarUrl
           to { transform: rotate(360deg); }
         }
       `}</style>
-
-      {/* Modal Lectura Diaria (Reutilizado para Favoritos) */}
-      {selectedFavorite && (
-        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }} onClick={() => setSelectedFavorite(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
-            backgroundColor: 'var(--background)', 
-            padding: '25px', 
-            borderRadius: '32px', 
-            maxWidth: '95%',
-            width: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            border: '1px solid var(--divider)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%' }}>
-              <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: 'bold' }}>Favorito</h2>
-              <button onClick={() => setSelectedFavorite(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)' }}>
-                <X size={28} />
-              </button>
-            </div>
-
-            <div className="daily-card" style={{ 
-              backgroundColor: 'var(--white)', 
-              position: 'relative', 
-              margin: '0 auto', 
-              width: '92%', 
-              boxShadow: 'var(--shadow)', 
-              border: '1px solid var(--divider)',
-              padding: '30px 20px 20px',
-              borderRadius: '24px',
-              textAlign: 'center'
-            }}>
-              <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>{selectedFavorite.versiculo}</p>
-              <h2 className="verse-text" style={{ color: 'var(--primary)', fontSize: '1.4rem', marginBottom: '15px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedFavorite.cita}"</h2>
-              <div className="card-divider" style={{ margin: '15px auto', height: '1px', backgroundColor: 'var(--divider)', width: '60%' }}></div>
-              <p className="reflection-text" style={{ textAlign: 'justify', color: 'var(--primary)', fontSize: '1rem', lineHeight: '1.5', marginBottom: '20px' }}>{selectedFavorite.reflexion}</p>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%' }}>
-                <div style={{ display: 'flex', gap: '3px' }}>
-                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: 'var(--accent)', borderRadius: '3px' }}></div>)}
-                </div>
-                <button onClick={() => setIsPlaying(!isPlaying)} style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
-                  <div style={{ color: 'var(--accent)' }}>
-                    {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 4 }} />}
-                  </div>
-                </button>
-                <div style={{ display: 'flex', gap: '3px' }}>
-                  {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: 'var(--accent)', borderRadius: '3px' }}></div>)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal Premium (Paywall) */}
       {showPremiumModal && (

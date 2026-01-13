@@ -11,6 +11,7 @@ import ExplorePage from './pages/ExplorePage';
 import DiarioPage from './pages/DiarioPage';
 import { Navbar, PremiumBadge, SubscriptionModal } from './components/Navigation';
 import { X, Play, Pause, Heart, Sprout, TreeDeciduous, PenLine, Feather, Book, MessageSquare, CheckCircle, Sparkles, Star, UserPlus, Home, BookOpen, Compass, Crown, Search, ChevronRight as ChevronRightIcon, TrendingUp } from 'lucide-react';
+import { speakText } from './utils/tts';
 import './App.css';
 
 // --- COMPONENTE: PANTALLA DE BIENVENIDA ---
@@ -180,8 +181,34 @@ const HomeScreen = ({
   const [showReadingModal, setShowReadingModal] = useState(false);
   const [quoteData, setQuoteData] = useState(null);
   const [bgImage, setBgImage] = useState('');
+  const [lastQuoteImgId, setLastQuoteImgId] = useState(null);
+  const [availableBackgrounds, setAvailableBackgrounds] = useState([]);
 
   const days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+  useEffect(() => {
+    const fetchBackgrounds = async () => {
+      try {
+        const { data, error } = await supabase.storage.from('backgrounds').list('', {
+          limit: 150,
+          offset: 0,
+          sortBy: { column: 'name', order: 'asc' }
+        });
+        
+        if (error) throw error;
+        if (data) {
+          // Filtrar archivos que tengan extensiones válidas y no sean carpetas
+          const files = data.filter(file => 
+            file.name.match(/\.(jpg|jpeg|png|webp|avif)$/i)
+          );
+          setAvailableBackgrounds(files.map(f => f.name));
+        }
+      } catch (e) {
+        console.error("Error al cargar lista de fondos:", e);
+      }
+    };
+    fetchBackgrounds();
+  }, []);
 
   useEffect(() => {
     const getLocalDate = () => {
@@ -278,8 +305,20 @@ const HomeScreen = ({
   };
 
   const handlePlayClick = () => {
-    if (!isPremium) setShowPaywall(true);
-    else setIsPlaying(!isPlaying);
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    
+    const nextState = !isPlaying;
+    setIsPlaying(nextState);
+    
+    if (nextState) {
+      const textToSpeak = `${content.versiculo}. ${content.cita}. ${content.reflexion}`;
+      speakText(textToSpeak, () => setIsPlaying(false));
+    } else {
+      window.speechSynthesis.cancel();
+    }
   };
 
   const updateProgress = async (task) => {
@@ -353,11 +392,32 @@ const HomeScreen = ({
   };
 
   const openQuoteModal = () => {
-    const randomImgNumber = Math.floor(Math.random() * 10) + 1;
+    let selectedFile;
     const supabaseUrl = 'https://elhncujrcvotrjpncfdg.supabase.co';
-    const bucketUrl = `${supabaseUrl}/storage/v1/object/public/backgrounds/${randomImgNumber}.jpg`;
     
-    setBgImage(`${bucketUrl}?t=${Date.now()}`);
+    if (availableBackgrounds.length > 0) {
+      // Usar lista dinámica de Supabase
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * availableBackgrounds.length);
+        selectedFile = availableBackgrounds[randomIndex];
+      } while (selectedFile === lastQuoteImgId && availableBackgrounds.length > 1);
+      
+      setLastQuoteImgId(selectedFile);
+      const bucketUrl = `${supabaseUrl}/storage/v1/object/public/backgrounds/${selectedFile}`;
+      setBgImage(`${bucketUrl}?t=${Date.now()}`);
+    } else {
+      // Fallback por si la lista falla o está vacía (usando el método anterior)
+      let randomImgNumber;
+      do {
+        randomImgNumber = Math.floor(Math.random() * 100) + 1;
+      } while (randomImgNumber === lastQuoteImgId);
+      
+      setLastQuoteImgId(randomImgNumber);
+      const bucketUrl = `${supabaseUrl}/storage/v1/object/public/backgrounds/${randomImgNumber}.jpg`;
+      setBgImage(`${bucketUrl}?t=${Date.now()}`);
+    }
+    
     setShowQuoteModal(true);
   };
 
@@ -418,8 +478,25 @@ const HomeScreen = ({
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      <header className="header" style={{ padding: '20px 20px 10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ 
+      flex: 1, 
+      display: 'flex', 
+      flexDirection: 'column',
+      backgroundImage: 'url("https://www.transparenttextures.com/patterns/papyros.png"), linear-gradient(rgba(253, 252, 240, 0.9), rgba(253, 252, 240, 0.9))',
+      backgroundColor: '#f4ecd8', // Color base de papel antiguo
+      position: 'relative'
+    }}>
+      {/* Sutil efecto de manchas de papel antiguo */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        opacity: 0.4,
+        background: 'radial-gradient(circle at 20% 30%, rgba(0,0,0,0.02) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(0,0,0,0.02) 0%, transparent 50%)',
+        zIndex: 0
+      }} />
+      
+      <header className="header" style={{ padding: '20px 20px 10px', display: 'flex', flexDirection: 'column', gap: '20px', zIndex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <div onClick={() => navigate('/profile')} style={{ 
             width: '50px', 
@@ -666,14 +743,14 @@ const HomeScreen = ({
             }} />
             
             <div style={{ zIndex: 2, maxWidth: '100%', position: 'relative' }}>
-              <Feather size={40} color="#D4AF37" style={{ marginBottom: '20px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+              <Feather size={40} color="#D4AF37" style={{ marginBottom: '20px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' }} />
               <h2 style={{ 
                 color: 'white', 
                 fontSize: '1.8rem', 
                 fontStyle: 'italic', 
                 lineHeight: '1.4',
                 marginBottom: '0px',
-                textShadow: '2px 2px 8px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5)' // Sombra oscura para resaltar en fondos claros
+                textShadow: '3px 3px 15px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.5)'
               }}>
                 "{quoteData?.phrase || 'Cargando cita...'}"
               </h2>
@@ -681,10 +758,42 @@ const HomeScreen = ({
                 color: '#D4AF37', 
                 fontSize: '1.1rem', 
                 fontWeight: 'bold', 
-                textShadow: '1px 1px 4px rgba(0,0,0,0.8)' 
+                textShadow: '2px 2px 8px rgba(0,0,0,0.8), 0 0 5px rgba(0,0,0,0.4)' 
               }}>
                 — {quoteData?.author || '...'}
               </p>
+
+              {/* Botón de audio para la Cita */}
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '30px' }}>
+                <button 
+                  onClick={() => {
+                    const nextState = !isPlaying;
+                    setIsPlaying(nextState);
+                    if (nextState) {
+                      speakText(quoteData?.phrase, () => setIsPlaying(false));
+                    } else {
+                      window.speechSynthesis.cancel();
+                    }
+                  }}
+                  style={{ 
+                    background: 'rgba(255,255,255,0.2)', 
+                    border: '1.5px solid rgba(255,255,255,0.4)', 
+                    borderRadius: '50%', 
+                    width: '60px', 
+                    height: '60px', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    color: 'white', 
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: 4 }} />}
+                </button>
+              </div>
             </div>
 
             <button 
@@ -692,17 +801,18 @@ const HomeScreen = ({
               onClick={handleAmen}
               style={{ 
                 position: 'absolute', 
-                bottom: '80px', 
-                backgroundColor: 'white', 
-                color: '#1A2B48',
+                bottom: '60px', 
+                backgroundColor: 'var(--accent)', 
+                color: 'white',
                 border: 'none',
                 width: 'auto',
-                padding: '12px 25px', // Reducido el padding lateral para hacerlo más pequeño
+                padding: '14px 50px',
                 zIndex: 10,
-                borderRadius: '12px', // Forma casi cuadrada, bordes suaves
+                borderRadius: '30px', 
                 fontWeight: 'bold',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-                fontSize: '1.1rem' // Manteniendo el tamaño del texto
+                boxShadow: '0 10px 25px rgba(212, 175, 55, 0.4)',
+                fontSize: '1.2rem',
+                letterSpacing: '1px'
               }}
             >
               Amén
@@ -817,15 +927,15 @@ const HomeScreen = ({
                   width: '50px', 
                   height: '50px', 
                   borderRadius: '50%', 
-                  backgroundColor: 'var(--primary)', 
+                  backgroundColor: 'var(--accent)', 
                   display: 'flex', 
                   justifyContent: 'center', 
                   alignItems: 'center', 
                   border: 'none', 
                   cursor: 'pointer', 
-                  boxShadow: '0 4px 12px rgba(26, 43, 72, 0.25)' 
+                  boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)' 
                 }}>
-                  <div style={{ color: 'var(--accent)' }}>
+                  <div style={{ color: 'white' }}>
                     {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />}
                   </div>
                 </button>

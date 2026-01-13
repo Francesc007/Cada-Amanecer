@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ChevronLeft, Heart, X, Play, Pause } from 'lucide-react';
+import { speakText } from '../utils/tts';
 
 const FavoritesPage = () => {
   const navigate = useNavigate();
@@ -160,7 +161,19 @@ const FavoritesPage = () => {
                 <div style={{ display: 'flex', gap: '3px' }}>
                   {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: 'var(--accent)', borderRadius: '3px' }}></div>)}
                 </div>
-                <button onClick={() => setIsPlaying(!isPlaying)} style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+                <button 
+                  onClick={() => {
+                    const nextState = !isPlaying;
+                    setIsPlaying(nextState);
+                    if (nextState) {
+                      const textToSpeak = `${selectedFavorite.versiculo}. ${selectedFavorite.cita}. ${selectedFavorite.reflexion}`;
+                      speakText(textToSpeak, () => setIsPlaying(false));
+                    } else {
+                      window.speechSynthesis.cancel();
+                    }
+                  }} 
+                  style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
+                >
                   <div style={{ color: 'var(--accent)' }}>
                     {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 4 }} />}
                   </div>
