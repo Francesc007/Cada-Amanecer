@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Search, Play, BookOpen, Clock, Star, Crown, Heart, Wind, Moon, Shield, Sparkles, Loader2, Sprout, CheckCircle, Pause } from 'lucide-react';
 import { PremiumBadge } from '../components/Navigation';
@@ -11,6 +11,7 @@ const ExplorePage = ({ isPremium }) => {
   const [prayers, setPrayers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState(null); // Para la vista de detalle
+  const [selectedMeditation, setSelectedMeditation] = useState(null); // Para la vista de detalle de meditación
   const [moodCounts, setMoodCounts] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -23,7 +24,25 @@ const ExplorePage = ({ isPremium }) => {
   const [bgImage, setBgImage] = useState('');
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [availableBackgrounds, setAvailableBackgrounds] = useState([]);
+  const [guidedMeditations, setGuidedMeditations] = useState([]);
+  const scrollRef = useRef(null);
   const pageSize = 10;
+
+  // Lógica de auto-scroll para el texto de meditación
+  useEffect(() => {
+    let interval;
+    if (isPlaying && selectedMeditation && scrollRef.current) {
+      // Iniciar el scroll lento
+      interval = setInterval(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop += 0.5; // Ajusta este valor para la velocidad del scroll
+        }
+      }, 50); // Cada 50ms
+    } else if (!isPlaying && scrollRef.current) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, selectedMeditation]);
 
   const moods = [
     { id: 'todos', label: 'Todos', icon: <Sparkles size={16} /> },
@@ -47,13 +66,35 @@ const ExplorePage = ({ isPremium }) => {
       title: 'Paz en la Tormenta', 
       duration: '10 min', 
       image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80' 
+    },
+    { 
+      id: 3, 
+      title: 'Gratitud al Despertar', 
+      duration: '8 min', 
+      image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80' 
     }
   ];
 
   useEffect(() => {
     fetchMoodCounts();
     fetchBackgrounds();
+    fetchGuidedMeditations();
   }, []);
+
+  const fetchGuidedMeditations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('guided_meditations')
+        .select('*')
+        .order('id', { ascending: true });
+      
+      if (!error && data) {
+        setGuidedMeditations(data);
+      }
+    } catch (e) {
+      console.error("Error al cargar meditaciones guiadas:", e);
+    }
+  };
 
   const fetchBackgrounds = async () => {
     try {
@@ -153,6 +194,39 @@ const ExplorePage = ({ isPremium }) => {
       setReadPrayers(newRead);
       localStorage.setItem('oraciones_leidas', JSON.stringify(newRead));
     }
+  };
+
+  const handleOpenMeditation = (med) => {
+    if (!isPremium) {
+      navigate('/profile', { state: { openPremium: true } });
+      return;
+    }
+
+    let selectedFile;
+    const supabaseUrl = 'https://elhncujrcvotrjpncfdg.supabase.co';
+    
+    if (availableBackgrounds.length > 0) {
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * availableBackgrounds.length);
+        selectedFile = availableBackgrounds[randomIndex];
+      } while (selectedFile === lastImgId && availableBackgrounds.length > 1);
+      
+      setLastImgId(selectedFile);
+      const bucketUrl = `${supabaseUrl}/storage/v1/object/public/backgrounds/${selectedFile}`;
+      setBgImage(`${bucketUrl}?t=${Date.now()}`);
+    } else {
+      let randomImgNumber;
+      do {
+        randomImgNumber = Math.floor(Math.random() * 100) + 1;
+      } while (randomImgNumber === lastImgId);
+      
+      setLastImgId(randomImgNumber);
+      const bucketUrl = `${supabaseUrl}/storage/v1/object/public/backgrounds/${randomImgNumber}.jpg`;
+      setBgImage(`${bucketUrl}?t=${Date.now()}`);
+    }
+
+    setSelectedMeditation(med);
   };
 
   const getMoodImage = (mood) => {
@@ -292,17 +366,14 @@ const ExplorePage = ({ isPremium }) => {
                           position: 'absolute',
                           top: '12px',
                           right: '12px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          width: '12px',
+                          height: '12px',
+                          backgroundColor: '#D4AF37',
                           borderRadius: '50%',
-                          padding: '2px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          zIndex: 5
-                        }}>
-                          <CheckCircle size={16} color="var(--accent)" fill="var(--accent)" />
-                        </div>
+                          boxShadow: '0 0 8px rgba(212, 175, 55, 0.6)',
+                          zIndex: 5,
+                          border: '1.5px solid rgba(255,255,255,0.8)'
+                        }} />
                       )}
 
                       <div style={{ 
@@ -391,10 +462,11 @@ const ExplorePage = ({ isPremium }) => {
             <Clock size={20} color="var(--accent)" /> Meditaciones Guiadas
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {meditations.map((med) => (
+            {(guidedMeditations.length > 0 ? guidedMeditations : meditations).map((med, index) => (
               <div 
-                key={med.id}
+                key={med.id || index}
                 className="animate-scale-in"
+                onClick={() => handleOpenMeditation(med)}
                 style={{ 
                   position: 'relative',
                   height: '110px',
@@ -405,7 +477,11 @@ const ExplorePage = ({ isPremium }) => {
                   border: '1px solid var(--divider)'
                 }}
               >
-                <img src={med.image} alt={med.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img 
+                  src={med.image_url || getMoodImage('paz')} 
+                  alt={med.title} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
                 <div style={{ 
                   position: 'absolute', 
                   inset: 0, 
@@ -417,20 +493,7 @@ const ExplorePage = ({ isPremium }) => {
                 }}>
                   <div>
                     <p style={{ color: 'white', fontWeight: 'bold', fontSize: '1.05rem', margin: 0 }}>{med.title}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', margin: '4px 0 0' }}>{med.duration} • Meditación</p>
-                  </div>
-                  <div style={{ 
-                    width: '40px', 
-                    height: '40px', 
-                    borderRadius: '50%', 
-                    backgroundColor: 'var(--accent)', 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    alignItems: 'center',
-                    color: 'white',
-                    boxShadow: '0 4px 15px rgba(212, 175, 55, 0.4)'
-                  }}>
-                    <Play size={18} fill="currentColor" />
+                    <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', margin: '4px 0 0' }}>{med.duration || 'Meditación'}</p>
                   </div>
                 </div>
                 {!isPremium && <PremiumBadge />}
@@ -577,8 +640,8 @@ const ExplorePage = ({ isPremium }) => {
                     }
                   }}
                   style={{ 
-                    width: '55px', 
-                    height: '55px', 
+                    width: '45px', 
+                    height: '45px', 
                     borderRadius: '50%', 
                     backgroundColor: 'rgba(255, 255, 255, 0.9)', 
                     display: 'flex', 
@@ -593,7 +656,167 @@ const ExplorePage = ({ isPremium }) => {
                     flexShrink: 0
                   }}
                 >
-                  {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 4 }} />}
+                  {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />}
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
+      )}
+
+      {/* Vista de Detalle de Meditación */}
+      {selectedMeditation && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '430px',
+          backgroundColor: 'black',
+          zIndex: 3000,
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideUp 0.3s ease-out',
+          overflow: 'hidden' // Importante para que el zoom no se salga
+        }}>
+          {/* Imagen de Fondo con Efecto Zoom */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            zIndex: 0,
+            animation: 'kenBurns 30s ease-in-out infinite',
+            animationPlayState: isPlaying ? 'running' : 'paused',
+            transition: 'transform 0.5s ease'
+          }} />
+
+          {/* Overlay sutil para legibilidad */}
+          <div style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            backgroundColor: 'rgba(0,0,0,0.2)', 
+            backdropFilter: 'contrast(1.2) saturate(1.1)',
+            zIndex: 1
+          }} />
+
+          {/* Botón Volver */}
+          <button 
+            onClick={() => {
+              setSelectedMeditation(null);
+              setIsPlaying(false);
+              window.speechSynthesis.cancel();
+            }} 
+            style={{ 
+              position: 'absolute',
+              top: '25px',
+              left: '20px',
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(10px)',
+              border: 'none',
+              color: 'white',
+              width: '45px',
+              height: '45px',
+              borderRadius: '50%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              cursor: 'pointer',
+              zIndex: 10,
+              boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+            }}
+          >
+            <ChevronLeft size={28} />
+          </button>
+
+          <main style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'flex-start', // Cambiado de center a flex-start para subir el contenido
+            alignItems: 'center', 
+            padding: '50px 30px 40px', // Aumentado padding superior para dar espacio al título
+            position: 'relative',
+            zIndex: 2,
+            textAlign: 'center'
+          }}>
+            <p style={{ 
+              fontSize: '1.8rem', 
+              fontWeight: 'bold', 
+              color: 'white', 
+              lineHeight: '1.3',
+              fontStyle: 'italic',
+              marginBottom: '30px',
+              textShadow: '3px 3px 15px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.5)'
+            }}>
+              "{selectedMeditation.title}"
+            </p>
+
+            <div style={{ 
+              height: '2px', 
+              backgroundColor: 'rgba(212, 175, 55, 0.8)', 
+              width: '80px', 
+              marginBottom: '5px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.5)'
+            }} />
+
+            <div 
+              ref={scrollRef}
+              style={{ 
+                maxHeight: '60vh', // Aumentado un poco el espacio del texto
+                overflowY: 'auto',
+                marginBottom: '30px',
+                padding: '0 10px'
+              }} className="custom-scrollbar">
+              <p style={{ 
+                fontSize: '1.15rem', 
+                color: 'rgba(255,255,255,0.98)', 
+                lineHeight: '1.6',
+                textAlign: 'justify',
+                whiteSpace: 'pre-wrap',
+                textShadow: '2px 2px 10px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.5)'
+              }}>
+                {selectedMeditation.content || selectedMeditation.description || selectedMeditation.reflexion || "Contenido no disponible."}
+              </p>
+            </div>
+
+            {/* Controles de Reproducción */}
+            <div style={{ width: '100%', maxWidth: '300px', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))', marginTop: 'auto', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '30px' }}>
+                <button 
+                  onClick={() => {
+                    const textToSpeak = selectedMeditation.content || selectedMeditation.description || selectedMeditation.reflexion;
+                    if (!textToSpeak) return;
+
+                    const nextState = !isPlaying;
+                    setIsPlaying(nextState);
+                    if (nextState) {
+                      speakText(textToSpeak, () => setIsPlaying(false));
+                    } else {
+                      window.speechSynthesis.cancel();
+                    }
+                  }}
+                  style={{ 
+                    width: '45px', 
+                    height: '45px', 
+                    borderRadius: '50%', 
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                    color: 'var(--primary)',
+                    backdropFilter: 'blur(5px)',
+                    padding: 0,
+                    flexShrink: 0
+                  }}
+                >
+                  {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />}
                 </button>
               </div>
             </div>

@@ -332,16 +332,27 @@ const HomeScreen = ({
         }
 
         // 2. Cargar Citas
-        const { data: quotesData } = await supabase
+        const { data: todayQuote } = await supabase
           .from('daily_quotes')
-          .select('phrase, author');
+          .select('phrase, author')
+          .eq('fecha', today)
+          .maybeSingle();
 
-        if (quotesData && quotesData.length > 0) {
-          const dateSeed = new Date(today).getTime();
-          const index = Math.floor((dateSeed / (1000 * 60 * 60 * 24)) % quotesData.length);
-          setQuoteData(quotesData[index]);
+        if (todayQuote) {
+          setQuoteData(todayQuote);
         } else {
-          setQuoteData({ phrase: "No se encontraron citas.", author: "Sistema" });
+          // Respaldo: si no hay cita programada para hoy, cargamos todas y usamos el sistema rotativo
+          const { data: quotesData } = await supabase
+            .from('daily_quotes')
+            .select('phrase, author');
+
+          if (quotesData && quotesData.length > 0) {
+            const dateSeed = new Date(today).getTime();
+            const index = Math.floor((dateSeed / (1000 * 60 * 60 * 24)) % quotesData.length);
+            setQuoteData(quotesData[index]);
+          } else {
+            setQuoteData({ phrase: "Dios te bendiga en este día.", author: "Cada Amanecer" });
+          }
         }
       } catch (e) {
         console.error("Error en fetchContent:", e);
@@ -807,21 +818,18 @@ const HomeScreen = ({
 
               {item.id !== 'reflexion' && (
                 <div style={{ 
-                  position: 'relative',
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
                   zIndex: 2,
-                  marginRight: '20px',
-                  width: '24px', 
-                  height: '24px', 
+                  width: '12px', 
+                  height: '12px', 
                   borderRadius: '50%', 
-                  border: `2.5px solid ${tareasCompletadas[item.id] ? '#D4AF37' : 'rgba(255,255,255,0.5)'}`,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  backgroundColor: tareasCompletadas[item.id] ? '#D4AF37' : 'rgba(0,0,0,0.2)',
-                  boxShadow: tareasCompletadas[item.id] ? '0 0 10px rgba(212, 175, 55, 0.5)' : 'none'
-                }}>
-                  {tareasCompletadas[item.id] && <CheckCircle size={14} color="white" fill="currentColor" />}
-                </div>
+                  border: `1.5px solid ${tareasCompletadas[item.id] ? '#D4AF37' : 'rgba(255,255,255,0.3)'}`,
+                  backgroundColor: tareasCompletadas[item.id] ? '#D4AF37' : 'transparent',
+                  boxShadow: tareasCompletadas[item.id] ? '0 0 8px rgba(212, 175, 55, 0.6)' : 'none',
+                  transition: 'all 0.3s ease'
+                }} />
               )}
             </button>
           ))}
@@ -964,8 +972,8 @@ const HomeScreen = ({
                     background: 'rgba(255,255,255,0.2)', 
                     border: '1.5px solid rgba(255,255,255,0.4)', 
                     borderRadius: '50%', 
-                    width: '60px', 
-                    height: '60px', 
+                    width: '50px', 
+                    height: '50px', 
                     display: 'flex', 
                     justifyContent: 'center', 
                     alignItems: 'center', 
@@ -976,7 +984,7 @@ const HomeScreen = ({
                     transition: 'all 0.3s ease'
                   }}
                 >
-                  {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: 4 }} />}
+                  {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 3 }} />}
                 </button>
               </div>
             </div>
@@ -1075,7 +1083,7 @@ const HomeScreen = ({
               </div>
               
               <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '1px' }}>
-                {content?.versiculo}
+                {content?.cita}
               </p>
               
               <h2 className="verse-text" style={{ 
@@ -1083,12 +1091,12 @@ const HomeScreen = ({
                 fontSize: '1.5rem', 
                 marginBottom: '1px', 
                 fontStyle: 'italic', 
-                lineHeight: '1.4',
+                lineHeight: '1.4', 
                 padding: '0 10px'
               }}>
-                "{content?.cita}"
+                "{content?.versiculo}"
               </h2>
-              
+
               {/* Un solo espacio mínimo entre cita y reflexión */}
               <div style={{ height: '5px' }} />
               
@@ -1109,8 +1117,8 @@ const HomeScreen = ({
                   {[1,2,3,4].map(i => <div key={i} style={{ width: '3px', height: `${10 + Math.random()*20}px`, backgroundColor: '#D4AF37', borderRadius: '3px' }}></div>)}
                 </div>
                 <button onClick={handlePlayClick} style={{ 
-                  width: '50px', 
-                  height: '50px', 
+                  width: '45px', 
+                  height: '45px', 
                   borderRadius: '50%', 
                   backgroundColor: 'var(--accent)', 
                   display: 'flex', 
@@ -1121,7 +1129,7 @@ const HomeScreen = ({
                   boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)' 
                 }}>
                   <div style={{ color: 'white' }}>
-                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />}
+                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />}
                   </div>
                 </button>
                 <div style={{ display: 'flex', gap: '3px' }}>

@@ -33,8 +33,8 @@ const FavoritesPage = () => {
       
       const mappedFavorites = data.map(f => ({
         id: f.id,
-        title: f.versiculo,
-        text: f.cita,
+        title: f.cita,
+        text: f.versiculo,
         fullContent: f
       }));
 
@@ -152,8 +152,8 @@ const FavoritesPage = () => {
               borderRadius: '24px',
               textAlign: 'center'
             }}>
-              <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>{selectedFavorite.versiculo}</p>
-              <h2 className="verse-text" style={{ color: 'var(--primary)', fontSize: '1.4rem', marginBottom: '15px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedFavorite.cita}"</h2>
+              <p style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '0.8rem', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '10px' }}>{selectedFavorite.cita}</p>
+              <h2 className="verse-text" style={{ color: 'var(--primary)', fontSize: '1.4rem', marginBottom: '15px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedFavorite.versiculo}"</h2>
               <div className="card-divider" style={{ margin: '15px auto', height: '1px', backgroundColor: 'var(--divider)', width: '60%' }}></div>
               <p className="reflection-text" style={{ textAlign: 'justify', color: 'var(--primary)', fontSize: '1rem', lineHeight: '1.5', marginBottom: '20px' }}>{selectedFavorite.reflexion}</p>
               
@@ -172,10 +172,10 @@ const FavoritesPage = () => {
                       window.speechSynthesis.cancel();
                     }
                   }} 
-                  style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
+                  style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}
                 >
                   <div style={{ color: 'var(--accent)' }}>
-                    {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" style={{ marginLeft: 4 }} />}
+                    {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 2 }} />}
                   </div>
                 </button>
                 <div style={{ display: 'flex', gap: '3px' }}>

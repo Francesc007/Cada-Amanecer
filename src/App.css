@@ -376,3 +376,10 @@ button:hover:not(:active),
   from { transform: translate(-50%, 100%); opacity: 0; }
   to { transform: translate(-50%, 0); opacity: 1; }
 }
+
+/* --- Efecto Zoom (Ken Burns) para Meditaciones --- */
+@keyframes kenBurns {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
